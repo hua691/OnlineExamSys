@@ -22,6 +22,12 @@ ALLOWED_HOSTS = [h.strip() for h in _extra_hosts if h.strip()] or (
 CSRF_TRUSTED_ORIGINS = [
     f'https://{h.lstrip(".")}' for h in ALLOWED_HOSTS if h != '*'
 ]
+# Cloudflare Tunnel / ngrok 等开发隧道域名,直接信任
+CSRF_TRUSTED_ORIGINS += [
+    'https://*.trycloudflare.com',
+    'https://*.ngrok-free.app',
+    'https://*.ngrok.io',
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',

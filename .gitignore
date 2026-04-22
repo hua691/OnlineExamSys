@@ -29,3 +29,6 @@ Thumbs.db
 # 项目临时
 _grade_demo.py
 progress.txt
+
+# Cloudflare Tunnel 可执行文件(63MB,本地用)
+deploy/cloudflared.exe
