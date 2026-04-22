@@ -136,11 +136,11 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'OnlineExamSys' / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # collectstatic 的输出目录
 
-# WhiteNoise 压缩+指纹缓存(生产环境用)
+# WhiteNoise 压缩(生产环境用,不开严格 Manifest 避免模板 {% static %} 引用缺失时 500)
 if IS_PROD:
     STORAGES = {
         'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
-        'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+        'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
     }
 
 # 媒体文件(图片/附件上传)
