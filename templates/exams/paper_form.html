@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">{{ title }}</div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-row">
+            <label>{{ form.title.label }} *</label>
+            {{ form.title }}
+            {% if form.title.errors %}<div style="color:var(--danger);font-size:12px;">{{ form.title.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-row">
+            <label>{{ form.description.label }}</label>
+            {{ form.description }}
+        </div>
+        <div style="display:grid;grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-row">
+                <label>{{ form.duration.label }}</label>
+                {{ form.duration }}
+            </div>
+            <div class="form-row">
+                <label>{{ form.course.label }}</label>
+                {{ form.course }}
+                <div style="color:#86909c;font-size:12px;margin-top:4px;">无课程关联则作为公共试卷</div>
+            </div>
+        </div>
+        <div class="form-row">
+            <label>{{ form.questions.label }}</label>
+            {{ form.questions }}
+            {% if form.questions.errors %}<div style="color:var(--danger);font-size:12px;">{{ form.questions.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-row" style="display:flex;align-items:center;gap:8px;">
+            {{ form.is_published }}
+            <label style="margin:0;">{{ form.is_published.label }}（勾选后学生可见）</label>
+        </div>
+
+        <div style="display:flex;gap:10px;">
+            <button type="submit" class="btn">💾 保存</button>
+            <a href="{% url 'exams:paper_list' %}" class="btn ghost">取消</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{# 管理员后台公用样式（顶部导航已经有四个 Tab，此处不再重复）#}
+<style>
+/* 管理页公用工具区 */
+.admin-filter{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+.admin-filter input[type=text]{padding:8px 12px;border:1px solid #e5e5e5;border-radius:6px;width:260px;font-size:13px;}
+.admin-filter input[type=text]:focus{outline:none;border-color:#C42A2A;box-shadow:0 0 0 3px rgba(196,42,42,.1);}
+.admin-filter select{padding:8px 12px;border:1px solid #e5e5e5;border-radius:6px;background:#fff;font-size:13px;}
+.admin-filter .chips{display:flex;gap:6px;flex-wrap:wrap;}
+.admin-filter .chip{padding:5px 12px;border-radius:14px;background:#f5f5f5;color:#4e5969;font-size:12px;border:1px solid transparent;}
+.admin-filter .chip.active{background:#fff5f5;color:#C42A2A;border-color:#C42A2A;}
+.admin-filter .count-badge{display:inline-block;background:#fff;color:inherit;padding:0 6px;border-radius:10px;margin-left:4px;font-size:11px;font-weight:600;}
+.admin-filter .chip.active .count-badge{background:#C42A2A;color:#fff;}
+
+/* 表格行内操作按钮 */
+.row-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.row-actions form{display:inline;margin:0;padding:0;}
+.row-actions .btn.xs{padding:3px 10px;font-size:12px;}
+.row-actions .role-select{padding:2px 6px;font-size:12px;border:1px solid #e5e5e5;border-radius:4px;background:#fff;}
+</style>

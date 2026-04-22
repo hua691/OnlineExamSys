@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}班级管理{% endblock %}
+{% block page_title %}班级管理 · 共 {{ total }} 个班级{% endblock %}
+
+{% block content %}
+{% include 'admin_panel/_subnav.html' %}
+
+<div class="card">
+    <form method="get" class="admin-filter">
+        <input type="text" name="q" value="{{ q }}" placeholder="🔍 班级名 / 年级 / 班主任 / 邀请码">
+        <button type="submit" class="btn sm">搜索</button>
+        {% if q %}<a href="{% url 'users:manage_classes' %}" class="btn ghost sm">清空</a>{% endif %}
+    </form>
+
+    <table class="data">
+        <thead>
+            <tr>
+                <th>ID</th><th>班级名称</th><th>年级</th><th>班主任</th>
+                <th>邀请码</th><th>学生数</th><th>任课教师</th>
+                <th>创建时间</th><th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for cls in classes %}
+            <tr>
+                <td>{{ cls.id }}</td>
+                <td>
+                    <a href="{% url 'classes:class_detail' cls.id %}" style="color:#C42A2A;font-weight:500;">
+                        {{ cls.name }}
+                    </a>
+                    {% if cls.description %}<div style="font-size:12px;color:#86909c;">{{ cls.description|truncatechars:40 }}</div>{% endif %}
+                </td>
+                <td>{{ cls.grade|default:'—' }}</td>
+                <td>{{ cls.head_teacher.first_name|default:cls.head_teacher.username }}</td>
+                <td><code style="background:#fff5f5;color:#C42A2A;padding:2px 8px;border-radius:4px;">{{ cls.invite_code }}</code></td>
+                <td><strong>{{ cls.student_num }}</strong></td>
+                <td>{{ cls.teacher_num }}</td>
+                <td style="color:#86909c;font-size:12px;">{{ cls.created_at|date:"Y-m-d" }}</td>
+                <td>
+                    <div class="row-actions">
+                        <a href="{% url 'classes:class_detail' cls.id %}" class="btn ghost xs">详情</a>
+                        <a href="{% url 'classes:class_stats' cls.id %}" class="btn ghost xs">统计</a>
+                        <form method="post" action="{% url 'users:delete_class' cls.id %}"
+                              onsubmit="return confirm('确定删除班级「{{ cls.name }}」?该班级的所有成员关系、课程、试卷都会受影响!')">
+                            {% csrf_token %}
+                            <button type="submit" class="btn danger xs">删除</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="9" class="empty">没有匹配的班级</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}批阅 - {{ record.paper.title }}{% endblock %}
+{% block page_title %}批阅：{{ record.paper.title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.q-card { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed #e5e6eb; }
+.q-card:last-child { border-bottom: none; }
+.q-stem { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+.ans-box { background:#fafafa; border-radius:6px; padding:10px 14px; margin-top:8px; font-size:13px; }
+.ans-box.stu { background:#fff1f0; }
+.ans-box.std { background:#f6ffed; }
+.score-row { display:flex; align-items:center; gap:8px; margin-top: 10px; }
+.score-row input { width: 100px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">
+        考生：<strong>{{ record.student.username }}</strong>
+        <span style="margin-left:20px;">试卷：{{ record.paper.title }}</span>
+        <span style="margin-left:20px;font-size:13px;color:#86909c;">
+            提交时间：{{ record.end_time|date:"Y-m-d H:i" }}
+        </span>
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    {% for a in answers %}
+        <div class="card q-card">
+            <div class="q-stem">
+                {{ forloop.counter }}. {{ a.question.content }}
+                <span class="tag gray">{{ a.question.get_type_display }} · {{ a.question.score }}分</span>
+            </div>
+            <div class="ans-box stu"><strong>学生答案：</strong>{{ a.student_answer|default:'（未作答）'|linebreaksbr }}</div>
+            <div class="ans-box std"><strong>参考答案：</strong>{{ a.question.answer|linebreaksbr }}</div>
+
+            {% if a.question.type == 'short_answer' %}
+                {% if a.similarity is not None %}
+                    <div style="margin-top:6px;font-size:13px;color:#4e5969;">
+                        🤖 语义相似度：<strong>{{ a.similarity }}</strong>
+                        系统建议分：<strong>{{ a.auto_score|default:0 }}</strong> / {{ a.question.score }}
+                    </div>
+                {% endif %}
+            {% else %}
+                <div style="margin-top:6px;font-size:13px;color:#4e5969;">
+                    {% if a.is_correct %}<span class="tag green">✓ 客观题自动判分：正确</span>
+                    {% else %}<span class="tag red">✗ 客观题自动判分：错误</span>{% endif %}
+                </div>
+            {% endif %}
+
+            <div class="score-row">
+                <label style="margin:0;">最终得分：</label>
+                <input type="number" class="form-control" name="score_{{ a.id }}"
+                       step="0.5" min="0" max="{{ a.question.score }}"
+                       value="{{ a.score|default_if_none:a.auto_score|default_if_none:0 }}"
+                       required>
+                <span style="color:#86909c;">/ {{ a.question.score }} 分</span>
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="card" style="background:#fafafa;display:flex;justify-content:space-between;align-items:center;">
+        <span>确认所有题目得分后点击"完成批阅"</span>
+        <div>
+            <a href="{% url 'exams:teacher_correction' %}" class="btn ghost">取消</a>
+            <button type="submit" class="btn success">✅ 完成批阅</button>
+        </div>
+    </div>
+</form>
+{% endblock %}

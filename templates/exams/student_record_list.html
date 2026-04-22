@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}我的考试记录{% endblock %}
+{% block page_title %}我的成绩{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">📊 历史考试</div>
+    <table class="data">
+        <thead><tr><th>试卷</th><th>开始时间</th><th>提交时间</th><th>状态</th><th>客观分</th><th>主观分</th><th>总分</th><th>操作</th></tr></thead>
+        <tbody>
+            {% for r in exam_records %}
+            <tr>
+                <td>{{ r.paper.title }}</td>
+                <td>{{ r.start_time|date:"Y-m-d H:i" }}</td>
+                <td>{{ r.end_time|date:"Y-m-d H:i"|default:'--' }}</td>
+                <td>
+                    {% if r.status == 'graded' %}<span class="tag green">已批阅</span>
+                    {% elif r.status == 'finished' %}<span class="tag orange">待批阅</span>
+                    {% else %}<span class="tag gray">未完成</span>{% endif %}
+                </td>
+                <td>{{ r.objective_score|default_if_none:'--' }}</td>
+                <td>{{ r.subjective_score|default_if_none:'--' }}</td>
+                <td><strong>{{ r.score|default_if_none:'--' }}</strong></td>
+                <td>
+                    {% if r.status == 'unfinished' %}
+                        <a href="{% url 'exams:exam_paper_detail' r.paper.id %}" class="btn sm">继续答题</a>
+                    {% else %}
+                        <a href="{% url 'exams:exam_result' r.id %}" class="btn ghost sm">查看详情</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8"><div class="empty">暂无考试记录</div></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

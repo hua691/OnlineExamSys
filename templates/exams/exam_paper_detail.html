@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}{{ paper.title }} - 答题{% endblock %}
+{% block page_title %}{{ paper.title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.exam-meta { display:flex; flex-wrap:wrap; gap:20px; color:#4e5969; font-size:13px; margin-bottom:8px;}
+.countdown {
+    padding: 8px 16px; background:#fff3e0; color:#d46b08;
+    border-radius: 20px; font-weight:600; display:inline-flex; gap:6px; align-items:center;
+}
+
+/* ===== 现代化确认 Modal ===== */
+.modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(3px);animation:fadeIn .2s;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-box{background:#fff;border-radius:16px;padding:32px 36px 28px;width:min(90vw,440px);box-shadow:0 24px 60px rgba(0,0,0,.25);text-align:center;animation:zoomIn .25s cubic-bezier(.2,.9,.4,1.2);}
+@keyframes zoomIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-icon{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#fff5f5,#ffe1e1);margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:32px;}
+.modal-title{font-size:18px;color:#1d2129;margin:0 0 18px;font-weight:600;}
+.modal-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.modal-stats .stat{background:#fafafa;border-radius:10px;padding:12px 0;}
+.modal-stats .stat.warning{background:#fff7e6;}
+.modal-stats .stat.total{background:#fff5f5;}
+.modal-stats .n{font-size:22px;font-weight:700;color:#1d2129;line-height:1;}
+.modal-stats .stat.warning .n{color:#f59e0b;}
+.modal-stats .stat.total .n{color:#C42A2A;}
+.modal-stats .l{font-size:12px;color:#86909c;margin-top:4px;}
+.modal-hint{background:#fff7e6;border:1px solid #ffd591;color:#d46b08;border-radius:8px;padding:8px 12px;font-size:13px;margin-bottom:12px;}
+.modal-desc{font-size:13px;color:#4e5969;line-height:1.7;margin:0 0 20px;}
+.modal-actions{display:flex;gap:12px;justify-content:center;}
+.modal-actions .btn.lg{padding:10px 28px;font-size:14px;min-width:120px;}
+.q-group-title {
+    font-size: 15px; font-weight: 600; color: #1d2129;
+    padding: 12px 0 8px; border-bottom: 1px solid #e5e6eb; margin-bottom: 12px;
+}
+.q-item { padding: 16px 0; border-bottom: 1px dashed #e5e6eb; }
+.q-item:last-child { border-bottom: none; }
+.q-head { font-size:14px; margin-bottom: 10px; }
+.q-head .no { color: var(--brand); font-weight: 600; }
+.q-score { float: right; color: #86909c; font-size: 12px; }
+.opt-list { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+.opt-list label {
+    display:flex; align-items: center; gap: 8px; padding: 10px 14px;
+    border:1px solid #e5e6eb; border-radius: 6px; cursor: pointer; transition: all .15s;
+}
+.opt-list label:hover { border-color: var(--brand); background: var(--brand-soft); }
+.opt-list input:checked + .opt-text { color: var(--brand); font-weight: 500; }
+.opt-list label.chk { /* visually show chk */ }
+.fixed-submit {
+    position: sticky; bottom: 10px; display: flex; justify-content: flex-end;
+    background: linear-gradient(to top, #f5f7fa 60%, rgba(245,247,250,0));
+    padding: 20px 0 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+        <div>
+            <h2 style="margin-bottom:6px;">📝 {{ paper.title }}</h2>
+            <div class="exam-meta">
+                <span>时长：{{ duration }} 分钟</span>
+                <span>题数：{{ paper.questions.count }}</span>
+                <span>满分：{{ paper.total_score }}</span>
+                <span id="save-hint" style="color:#52c41a;"></span>
+            </div>
+            {% if paper.description %}<div style="color:#4e5969;">{{ paper.description }}</div>{% endif %}
+        </div>
+        <div class="countdown">⏱ 剩余 <span id="time-left">--:--</span></div>
+    </div>
+</div>
+
+{% if saved_answers %}
+<div class="alert info" style="margin-bottom:16px;">
+    ✨ 已自动恢复上次未提交的答题进度(共 <strong>{{ saved_answers|length }}</strong> 题),继续作答即可。
+</div>
+{% endif %}
+
+<form method="post" action="{% url 'exams:submit_exam' paper.id %}" id="exam-form">
+    {% csrf_token %}
+    {% for title, questions in question_groups %}
+        <div class="card">
+            <div class="q-group-title">{{ title }}</div>
+            {% for q in questions %}
+                {# saved 可能是 'A'(单) / 'A,B'(多) / 长文本(简答) / ''(空) #}
+                {% with saved=saved_answers|dict_get:q.id %}
+                <div class="q-item" data-qid="{{ q.id }}">
+                    <div class="q-head">
+                        <span class="q-score">({{ q.score }} 分)</span>
+                        <span class="no">{{ forloop.counter }}.</span>
+                        {{ q.content }}
+                    </div>
+
+                    {% if q.type == 'single_choice' %}
+                        <div class="opt-list">
+                            {% for key, value in q.options %}
+                                <label>
+                                    <input type="radio" name="q_{{ q.id }}" value="{{ key }}"
+                                           {% if saved == key %}checked{% endif %}>
+                                    <span class="opt-text">{{ key }}. {{ value }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    {% elif q.type == 'multiple_choice' %}
+                        <div class="opt-list">
+                            {% for key, value in q.options %}
+                                <label>
+                                    <input type="checkbox" name="q_{{ q.id }}" value="{{ key }}"
+                                           {% if saved|csv_has:key %}checked{% endif %}>
+                                    <span class="opt-text">{{ key }}. {{ value }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    {% elif q.type == 'judgment' %}
+                        <div class="opt-list">
+                            {% for key, value in q.options %}
+                                <label>
+                                    <input type="radio" name="q_{{ q.id }}" value="{{ key }}"
+                                           {% if saved == key %}checked{% endif %}>
+                                    <span class="opt-text">{{ value }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    {% elif q.type == 'short_answer' %}
+                        <textarea class="form-control" name="q_{{ q.id }}" rows="4"
+                                  placeholder="请输入你的答案...">{{ saved|default:'' }}</textarea>
+                    {% endif %}
+                </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+    <div class="fixed-submit">
+        <button type="button" id="btn-submit" class="btn" style="padding:10px 32px;font-size:15px;">
+            ✅ 提交试卷
+        </button>
+    </div>
+</form>
+
+{# ==================== 自制提交确认 Modal ==================== #}
+<div id="submit-modal" class="modal-mask" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-icon">📝</div>
+        <h3 class="modal-title">确定要提交试卷吗?</h3>
+        <div class="modal-stats">
+            <div class="stat"><div class="n" id="ans-count">-</div><div class="l">已作答</div></div>
+            <div class="stat warning"><div class="n" id="unans-count">-</div><div class="l">未作答</div></div>
+            <div class="stat total"><div class="n">{{ paper.questions.count }}</div><div class="l">总题数</div></div>
+        </div>
+        <div id="unans-hint" class="modal-hint" style="display:none;">
+            ⚠️ 还有题目未作答,确定要提交吗?
+        </div>
+        <p class="modal-desc">提交后将<strong>立即自动评分客观题</strong>,主观题由教师批阅后公布。<br>一经提交不可再修改。</p>
+        <div class="modal-actions">
+            <button type="button" class="btn ghost lg" id="btn-cancel">继续作答</button>
+            <button type="button" class="btn lg" id="btn-confirm">确认提交</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==================== 1. 倒计时(按服务端 remaining_seconds) ====================
+let totalSec = {{ remaining_seconds }};
+const tEl = document.getElementById('time-left');
+function tick() {
+    const m = Math.floor(Math.max(totalSec, 0) / 60);
+    const s = Math.max(totalSec, 0) % 60;
+    tEl.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    if (totalSec <= 300 && totalSec > 0) {
+        document.querySelector('.countdown').style.background = '#ffe1e1';
+        document.querySelector('.countdown').style.color = '#C42A2A';
+    }
+    if (totalSec <= 0) {
+        alert('时间已到，系统将自动提交试卷');
+        document.getElementById('exam-form').submit();
+        return;
+    }
+    totalSec--;
+}
+tick();
+setInterval(tick, 1000);
+
+// ==================== 2. 答题草稿自动保存 ====================
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+const autosaveUrl = "{% url 'exams:autosave_answer' paper.id %}";
+const saveHint = document.getElementById('save-hint');
+let hintTimer = null;
+
+function showHint(text, color) {
+    saveHint.textContent = text;
+    saveHint.style.color = color || '#52c41a';
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(() => { saveHint.textContent = ''; }, 2500);
+}
+
+async function saveAnswer(qid, value) {
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', csrftoken);
+    fd.append('field', 'q_' + qid);
+    fd.append('value', value);
+    try {
+        const r = await fetch(autosaveUrl, {method: 'POST', body: fd, credentials: 'include'});
+        if (r.ok) showHint('💾 已保存');
+        else showHint('⚠️ 保存失败,请检查网络', '#e15c5c');
+    } catch(e) {
+        showHint('⚠️ 网络异常,未保存', '#e15c5c');
+    }
+}
+
+// 采集单/多/判断题答案(按 qid 聚合)
+function gatherAnswer(qid) {
+    const inputs = document.querySelectorAll(`input[name="q_${qid}"]`);
+    if (!inputs.length) {
+        // 简答题
+        const t = document.querySelector(`textarea[name="q_${qid}"]`);
+        return t ? t.value : '';
+    }
+    // radio: 返回 checked 的 value;checkbox: 返回逗号拼接
+    const checked = [...inputs].filter(i => i.checked).map(i => i.value);
+    return checked.join(',');
+}
+
+// radio/checkbox change 事件
+document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(inp => {
+    inp.addEventListener('change', () => {
+        const qid = inp.name.substring(2);
+        saveAnswer(qid, gatherAnswer(qid));
+    });
+});
+
+// 简答题:失焦保存 + 每 10s 心跳
+document.querySelectorAll('textarea').forEach(t => {
+    t.addEventListener('blur', () => {
+        const qid = t.name.substring(2);
+        saveAnswer(qid, t.value);
+    });
+});
+setInterval(() => {
+    // 只保存已被修改的 textarea(通过一个 dirty 标记)
+    document.querySelectorAll('textarea').forEach(t => {
+        if (t.dataset.dirty === '1') {
+            t.dataset.dirty = '0';
+            const qid = t.name.substring(2);
+            saveAnswer(qid, t.value);
+        }
+    });
+}, 10000);
+document.querySelectorAll('textarea').forEach(t => {
+    t.addEventListener('input', () => { t.dataset.dirty = '1'; });
+});
+
+// ==================== 3. 提交确认 Modal ====================
+let submitting = false;
+const form = document.getElementById('exam-form');
+const modal = document.getElementById('submit-modal');
+const btnSubmit = document.getElementById('btn-submit');
+const btnCancel = document.getElementById('btn-cancel');
+const btnConfirm = document.getElementById('btn-confirm');
+
+// 统计已作答/未作答
+function countAnswers() {
+    const items = document.querySelectorAll('.q-item');
+    let answered = 0;
+    items.forEach(it => {
+        const qid = it.dataset.qid;
+        const v = gatherAnswer(qid);
+        if (v && v.trim()) answered += 1;
+    });
+    return {answered, total: items.length, unanswered: items.length - answered};
+}
+
+btnSubmit.addEventListener('click', () => {
+    const c = countAnswers();
+    document.getElementById('ans-count').textContent = c.answered;
+    document.getElementById('unans-count').textContent = c.unanswered;
+    document.getElementById('unans-hint').style.display = c.unanswered > 0 ? 'block' : 'none';
+    modal.style.display = 'flex';
+});
+btnCancel.addEventListener('click', () => { modal.style.display = 'none'; });
+modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+btnConfirm.addEventListener('click', async () => {
+    if (submitting) return;
+    submitting = true;
+    btnConfirm.disabled = true;
+    btnConfirm.textContent = '提交中...';
+    // 阻止后续 autosave 抢锁
+    saveAnswer = async () => { /* no-op */ };
+    // 等 200ms 确保当前 autosave 已结束
+    await new Promise(r => setTimeout(r, 200));
+    form.submit();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,35 @@
+# Render Blueprint - 一键部署整个系统(Web + PostgreSQL)
+# 使用方法:代码推到 GitHub 后,到 Render Dashboard → New → Blueprint → 选仓库
+# Render 会读取此文件自动创建所有服务,2-3 分钟出结果。
+
+services:
+  # ========== Django Web 服务 ==========
+  - type: web
+    name: online-exam
+    env: python
+    region: singapore           # 离中国最近(亚洲节点)
+    plan: free                  # 免费 tier:512MB 内存,15 分钟无访问休眠
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    startCommand: "python manage.py migrate --noinput && gunicorn OnlineExamSys.wsgi --bind 0.0.0.0:$PORT --workers 2 --timeout 60"
+    healthCheckPath: /users/login/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DJANGO_ENV
+        value: production
+      - key: DJANGO_SECRET_KEY
+        generateValue: true     # Render 自动生成安全密钥
+      - key: DJANGO_ALLOWED_HOSTS
+        value: .onrender.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: online-exam-db
+          property: connectionString
+
+# ========== PostgreSQL 数据库 ==========
+databases:
+  - name: online-exam-db
+    plan: free                  # 免费 90 天 · 1GB
+    region: singapore
+    databaseName: exam
+    user: exam

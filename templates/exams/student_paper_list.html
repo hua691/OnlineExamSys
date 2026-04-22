@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}待参加考试{% endblock %}
+{% block page_title %}待参加考试{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">📝 共 {{ paper_count }} 份可参加试卷</div>
+    {% if uncompleted_papers %}
+        <table class="data">
+            <thead><tr><th>试卷</th><th>所属课程</th><th>时长</th><th>题数</th><th>发布时间</th><th>操作</th></tr></thead>
+            <tbody>
+                {% for p in uncompleted_papers %}
+                <tr>
+                    <td><strong>{{ p.title }}</strong><div style="color:#86909c;font-size:12px;">{{ p.description|default:''|truncatechars:40 }}</div></td>
+                    <td>{% if p.course %}<span class="tag blue">{{ p.course.name }}</span>{% else %}<span class="tag gray">公共</span>{% endif %}</td>
+                    <td>{{ p.duration }} 分钟</td>
+                    <td>{{ p.questions.count }}</td>
+                    <td>{{ p.created_at|date:"Y-m-d H:i" }}</td>
+                    <td><a href="{% url 'exams:exam_paper_detail' p.id %}" class="btn sm">进入答题</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty"><div class="big">🎉</div>目前没有待参加的考试</div>
+    {% endif %}
+</div>
+{% endblock %}

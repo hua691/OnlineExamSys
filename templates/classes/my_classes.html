@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}{% if role == 'teacher' %}我教的课{% else %}我听的课{% endif %}{% endblock %}
+{% block page_title %}{% if role == 'teacher' %}我教的课程与班级{% else %}我听的课{% endif %}{% endblock %}
+
+{% block content %}
+{# ============ 顶部工具栏 ============ #}
+<div class="toolbar">
+    {% if role == 'teacher' %}
+        <a href="{% url 'classes:create_class' %}" class="btn">+ 新建班级</a>
+        <a href="{% url 'classes:create_course' %}" class="btn outline">+ 创建课程</a>
+    {% else %}
+        <a href="{% url 'classes:join_class' %}" class="btn">+ 加入班级</a>
+    {% endif %}
+</div>
+
+{# ============ 课程瓦片 ============ #}
+<div class="card">
+    <div class="card-title">
+        <span class="dot"></span>
+        {% if role == 'teacher' %}📚 我教的课程（{{ courses|length }}）
+        {% else %}📚 我的课程（{{ courses|length }}）
+        {% endif %}
+    </div>
+    {% if courses %}
+        <div class="course-grid">
+        {% for c in courses %}
+            <a href="{% url 'classes:course_detail' c.id %}" class="course-tile"
+               style="--hero:{{ c.cover_color|default:'#C42A2A' }};">
+                <div class="course-hero-mini">
+                    <span class="course-emoji">📘</span>
+                    <span class="course-klass-badge">{{ c.classroom.name }}</span>
+                </div>
+                <div class="course-body">
+                    <div class="course-name">{{ c.name }}</div>
+                    <div class="course-desc">{{ c.description|default:'暂无课程描述'|truncatechars:40 }}</div>
+                    <div class="course-meta">
+                        {% if role == 'teacher' %}
+                            <span>👥 {{ c.classroom.memberships.count }} 名成员</span>
+                        {% else %}
+                            <span>👨‍🏫 {{ c.teacher.first_name|default:c.teacher.username }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty">
+            {% if role == 'teacher' %}
+                还没有课程。先<a href="{% url 'classes:create_class' %}">创建班级</a>，再<a href="{% url 'classes:create_course' %}">创建课程</a>
+            {% else %}
+                还没加入任何班级。向老师获取邀请码 <a href="{% url 'classes:join_class' %}">加入班级</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+{# ============ 班级列表 ============ #}
+{% if role == 'teacher' and headed_classes %}
+<div class="card">
+    <div class="card-title"><span class="dot"></span>🏫 我管理的班级（{{ headed_classes|length }}）</div>
+    <table class="data">
+        <thead><tr><th>班级</th><th>邀请码</th><th>人数</th><th>操作</th></tr></thead>
+        <tbody>
+        {% for cls in headed_classes %}
+            <tr>
+                <td><strong>{{ cls.name }}</strong><div style="font-size:12px;color:#86909c;">{{ cls.description|default:''|truncatechars:40 }}</div></td>
+                <td><code style="background:#fff5f5;color:#C42A2A;padding:2px 8px;border-radius:4px;">{{ cls.invite_code }}</code></td>
+                <td>{{ cls.memberships.count }}</td>
+                <td>
+                    <a href="{% url 'classes:class_detail' cls.id %}" class="btn ghost sm">详情</a>
+                    <a href="{% url 'classes:class_stats' cls.id %}" class="btn ghost sm">成绩分析</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if role == 'student' and memberships %}
+<div class="card">
+    <div class="card-title"><span class="dot"></span>🏫 我加入的班级（{{ memberships|length }}）</div>
+    <table class="data">
+        <thead><tr><th>班级</th><th>班主任</th><th>加入时间</th></tr></thead>
+        <tbody>
+        {% for m in memberships %}
+            <tr>
+                <td><a href="{% url 'classes:class_detail' m.classroom.id %}"><strong>{{ m.classroom.name }}</strong></a></td>
+                <td>{{ m.classroom.head_teacher.first_name|default:m.classroom.head_teacher.username }}</td>
+                <td>{{ m.joined_at|date:"Y-m-d" }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.toolbar{display:flex;gap:10px;margin-bottom:16px;}
+.course-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.course-tile{display:block;border-radius:12px;overflow:hidden;background:#fff;border:1px solid #eee;transition:all .25s;text-decoration:none;color:inherit;}
+.course-tile:hover{transform:translateY(-4px);box-shadow:0 10px 24px rgba(196,42,42,.12);border-color:var(--hero);}
+.course-hero-mini{height:90px;background:linear-gradient(135deg,var(--hero) 0%,#e06666 100%);display:flex;align-items:center;justify-content:space-between;padding:0 18px;color:#fff;}
+.course-emoji{font-size:36px;opacity:.6;}
+.course-klass-badge{background:rgba(255,255,255,.22);padding:3px 10px;border-radius:12px;font-size:12px;}
+.course-body{padding:16px 18px;}
+.course-name{font-size:17px;font-weight:600;color:#1d2129;margin-bottom:6px;}
+.course-desc{font-size:13px;color:#86909c;line-height:1.5;min-height:40px;}
+.course-meta{font-size:12px;color:#86909c;margin-top:8px;padding-top:10px;border-top:1px dashed #f0f0f0;display:flex;gap:10px;flex-wrap:wrap;}
+</style>
+{% endblock %}

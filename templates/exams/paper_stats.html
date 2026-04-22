@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% block title %}{{ paper.title }} · 成绩分析{% endblock %}
+{% block page_title %}{% endblock %}
+
+{% block content %}
+<div class="stats-hero">
+    <div class="hero-left">
+        <div class="hero-icon">📊</div>
+        <div>
+            <h2>{{ paper.title }}</h2>
+            <p class="hero-sub">满分 {{ total_full }} 分 · 已批阅 {{ n }} 份 · 平均分 {{ avg }}</p>
+        </div>
+    </div>
+    <div class="hero-actions">
+        <a href="{% url 'exams:export_records_xlsx' %}?paper_id={{ paper.id }}&status=graded"
+           class="btn outline sm">📥 导出 Excel</a>
+        <a href="{% url 'exams:teacher_correction' %}" class="btn ghost sm">← 返回阅卷</a>
+    </div>
+</div>
+
+{# ========== 核心指标 ========== #}
+<div class="metric-grid">
+    <div class="m-card"><div class="m-ico">📝</div><div class="m-num">{{ n }}</div><div class="m-lab">提交人数</div></div>
+    <div class="m-card success"><div class="m-ico">✅</div><div class="m-num">{{ pass_rate }}<small>%</small></div><div class="m-lab">及格率</div></div>
+    <div class="m-card primary"><div class="m-ico">📊</div><div class="m-num">{{ avg }}</div><div class="m-lab">平均分</div></div>
+    <div class="m-card warning"><div class="m-ico">🏆</div><div class="m-num">{{ highest }}</div><div class="m-lab">最高分</div></div>
+    <div class="m-card danger"><div class="m-ico">⚠️</div><div class="m-num">{{ lowest }}</div><div class="m-lab">最低分</div></div>
+</div>
+
+{# ========== 图表区 ========== #}
+<div class="charts-grid">
+    <div class="card">
+        <div class="card-title"><span class="dot"></span>📉 分数段分布</div>
+        {% if n %}
+            <div class="chart-box"><canvas id="barChart"></canvas></div>
+        {% else %}
+            <div class="empty-mini">暂无已批阅的成绩</div>
+        {% endif %}
+    </div>
+    <div class="card">
+        <div class="card-title"><span class="dot"></span>🥧 及格率</div>
+        {% if n %}
+            <div class="chart-box"><canvas id="pieChart"></canvas></div>
+        {% else %}
+            <div class="empty-mini">暂无数据</div>
+        {% endif %}
+    </div>
+</div>
+
+{# ========== 详细名单 ========== #}
+<div class="card">
+    <div class="card-title"><span class="dot"></span>🧑‍🎓 成绩明细</div>
+    {% if records %}
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>名次</th><th>学生</th><th>用户名</th>
+                    <th>客观分</th><th>主观分</th><th>总分</th>
+                    <th>得分率</th><th>提交时间</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for r in records %}
+                <tr>
+                    <td><strong>{{ forloop.counter }}</strong></td>
+                    <td>{{ r.student.first_name|default:r.student.username }}</td>
+                    <td style="color:#86909c;">@{{ r.student.username }}</td>
+                    <td>{{ r.objective_score }}</td>
+                    <td>{{ r.subjective_score }}</td>
+                    <td><strong style="color:#C42A2A;">{{ r.score }}</strong> / {{ total_full }}</td>
+                    <td>
+                        {% widthratio r.score total_full 100 as pct %}
+                        {% if pct >= 90 %}<span class="tag green">{{ pct }}%</span>
+                        {% elif pct >= 60 %}<span class="tag orange">{{ pct }}%</span>
+                        {% else %}<span class="tag red">{{ pct }}%</span>{% endif %}
+                    </td>
+                    <td style="color:#86909c;font-size:12px;">{{ r.end_time|date:"Y-m-d H:i" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-mini">还没有已批阅的成绩记录</div>
+    {% endif %}
+</div>
+
+{{ bin_labels|json_script:"bin-labels" }}
+{{ bins|json_script:"bin-counts" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+    const labels = JSON.parse(document.getElementById('bin-labels').textContent);
+    const counts = JSON.parse(document.getElementById('bin-counts').textContent);
+    const passCount = {{ pass_count }};
+    const failCount = {{ fail_count }};
+
+    if (document.getElementById('barChart')) {
+        new Chart(document.getElementById('barChart'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '人数',
+                    data: counts,
+                    backgroundColor: ['#e15c5c','#f0a030','#faad14','#52c41a','#C42A2A'],
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {legend: {display: false}},
+                scales: {y: {beginAtZero: true, ticks: {precision: 0}}}
+            }
+        });
+    }
+    if (document.getElementById('pieChart')) {
+        new Chart(document.getElementById('pieChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['及格', '不及格'],
+                datasets: [{
+                    data: [passCount, failCount],
+                    backgroundColor: ['#52c41a', '#e15c5c'],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {legend: {position: 'bottom'}},
+                cutout: '60%',
+            }
+        });
+    }
+})();
+</script>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.stats-hero{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;background:linear-gradient(135deg,#fff5f5 0%,#fff 70%);border-radius:12px;margin-bottom:16px;border-left:4px solid #C42A2A;}
+.stats-hero .hero-left{display:flex;align-items:center;gap:16px;}
+.stats-hero .hero-icon{width:56px;height:56px;border-radius:16px;background:#C42A2A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 6px 16px rgba(196,42,42,.25);}
+.stats-hero h2{font-size:20px;color:#1d2129;margin:0 0 4px;}
+.stats-hero .hero-sub{color:#86909c;font-size:13px;margin:0;}
+.stats-hero .hero-actions{display:flex;gap:8px;}
+
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
+.m-card{background:#fff;padding:14px 18px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.04);border-top:3px solid #999;}
+.m-card.primary{border-top-color:#C42A2A;}
+.m-card.success{border-top-color:#52c41a;}
+.m-card.warning{border-top-color:#f59e0b;}
+.m-card.danger{border-top-color:#ef4444;}
+.m-card .m-ico{font-size:20px;margin-bottom:6px;}
+.m-card .m-num{font-size:24px;font-weight:700;color:#1d2129;line-height:1;}
+.m-card .m-num small{font-size:14px;color:#86909c;margin-left:2px;}
+.m-card .m-lab{font-size:12px;color:#86909c;margin-top:6px;}
+
+.charts-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
+.chart-box{position:relative;height:280px;width:100%;}
+.empty-mini{padding:40px 0;text-align:center;color:#86909c;}
+
+@media (max-width:900px){
+    .charts-grid{grid-template-columns:1fr;}
+    .stats-hero{flex-direction:column;align-items:flex-start;gap:12px;}
+}
+</style>
+{% endblock %}

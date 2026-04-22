@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}答题 - {{ record.paper.title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>{{ record.paper.title }}</h3>
+    <p style="color: #666;">考试时长：{{ record.paper.duration }} 分钟 | 请在规定时间内完成答题</p>
+    
+    <form method="post" style="margin-top: 2rem;">
+        {% csrf_token %}
+        {% for question in record.paper.questions.all %}
+        <div style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+            <h4>
+                {{ forloop.counter }}. {{ question.get_type_display }} ({{ question.score }}分)
+            </h4>
+            <p style="margin: 0.5rem 0;">{{ question.content }}</p>
+            
+            {% if question.type == 'single' %}
+                {% for key, val in question.options.items %}
+                <div style="margin: 0.3rem 0;">
+                    <input type="radio" name="q_{{ question.id }}" value="{{ key }}" id="q{{ question.id }}_{{ key }}">
+                    <label for="q{{ question.id }}_{{ key }}">{{ key }}. {{ val }}</label>
+                </div>
+                {% endfor %}
+            
+            {% elif question.type == 'multiple' %}
+                {% for key, val in question.options.items %}
+                <div style="margin: 0.3rem 0;">
+                    <input type="checkbox" name="q_{{ question.id }}" value="{{ key }}" id="q{{ question.id }}_{{ key }}">
+                    <label for="q{{ question.id }}_{{ key }}">{{ key }}. {{ val }}</label>
+                </div>
+                {% endfor %}
+            
+            {% elif question.type == 'judge' %}
+                <div style="margin: 0.3rem 0;">
+                    <input type="radio" name="q_{{ question.id }}" value="对" id="q{{ question.id }}_1">
+                    <label for="q{{ question.id }}_1">对</label>
+                </div>
+                <div style="margin: 0.3rem 0;">
+                    <input type="radio" name="q_{{ question.id }}" value="错" id="q{{ question.id }}_2">
+                    <label for="q{{ question.id }}_2">错</label>
+                </div>
+            
+            {% else %}
+                <textarea name="q_{{ question.id }}" rows="6" style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 4px;" placeholder="请输入答案..."></textarea>
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        <button type="submit" class="btn btn-success">提交试卷</button>
+    </form>
+</div>
+{% endblock %}

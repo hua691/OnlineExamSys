@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}开始批阅{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>批阅试卷：{{ record.paper.title }}</h3>
+    <p>学生：{{ record.student.username }}</p>
+    <p>提交时间：{{ record.submitted_at|date:"Y-m-d H:i" }}</p>
+    
+    <form method="post" style="margin-top: 2rem;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-warning">开始自动批阅客观题</button>
+        <a href="{% url 'exams:paper_detail' record.paper.id %}" class="btn" style="background: #eee; color: #333;">取消</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}阅卷中心{% endblock %}
+{% block page_title %}阅卷中心{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span>✍️ 试卷批阅</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+            <a href="?filter=pending" class="btn {% if filter == 'pending' %}{% else %}ghost{% endif %} sm">待批阅</a>
+            <a href="?filter=graded" class="btn {% if filter == 'graded' %}{% else %}ghost{% endif %} sm">已批阅</a>
+            <a href="?filter=all" class="btn {% if filter == 'all' %}{% else %}ghost{% endif %} sm">全部</a>
+            <span style="width:1px;height:18px;background:#eee;margin:0 4px;"></span>
+            <a href="{% url 'exams:export_records_xlsx' %}?status={{ filter|default:'all' }}"
+               class="btn outline sm" title="导出当前筛选结果为 Excel">📥 导出 Excel</a>
+        </div>
+    </div>
+    <table class="data">
+        <thead><tr><th>学生</th><th>试卷</th><th>提交时间</th><th>客观分</th><th>主观分</th><th>总分</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody>
+            {% for r in correction_records %}
+            <tr>
+                <td>{{ r.student.username }}{% if r.student.first_name %}（{{ r.student.first_name }}）{% endif %}</td>
+                <td>{{ r.paper.title }}</td>
+                <td>{{ r.end_time|date:"Y-m-d H:i" }}</td>
+                <td>{{ r.objective_score }}</td>
+                <td>{{ r.subjective_score }}</td>
+                <td>{{ r.score|default_if_none:'--' }}</td>
+                <td>
+                    {% if r.status == 'graded' %}<span class="tag green">已批阅</span>
+                    {% elif r.status == 'finished' %}<span class="tag orange">待批阅</span>
+                    {% else %}<span class="tag gray">未完成</span>{% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'exams:exam_result' r.id %}" class="btn ghost sm">查看</a>
+                    {% if r.status != 'unfinished' %}
+                        <a href="{% url 'exams:grade_record' r.id %}" class="btn sm">批阅</a>
+                    {% endif %}
+                    <a href="{% url 'exams:paper_stats' r.paper.id %}" class="btn ghost sm" title="按试卷查看成绩统计">📊 统计</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8"><div class="empty">暂无试卷</div></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

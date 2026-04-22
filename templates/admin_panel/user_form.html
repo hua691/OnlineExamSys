@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block title %}{% if mode == 'create' %}新建用户{% else %}编辑 {{ form_user.username }}{% endif %}{% endblock %}
+{% block page_title %}{% endblock %}
+
+{% block content %}
+<div class="user-form-hero">
+    <div class="hero-left">
+        <div class="hero-icon">
+            {% if mode == 'create' %}👤+{% else %}✏️{% endif %}
+        </div>
+        <div>
+            <h2>{% if mode == 'create' %}新建账号{% else %}编辑 · {{ form_user.username }}{% endif %}</h2>
+            <p class="hero-sub">
+                {% if mode == 'create' %}
+                    为教师或学生开通一个新的登录账号
+                {% else %}
+                    修改用户基本信息和角色(管理员身份不可在此处变更)
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    <a href="{% url 'users:manage_users' %}" class="btn ghost sm">← 返回用户列表</a>
+</div>
+
+<form method="post" class="user-form">
+    {% csrf_token %}
+
+    <div class="card user-form-card">
+        <div class="section-title"><span class="dot"></span>基本信息</div>
+
+        <div class="form-row">
+            <label>用户名<span class="req">*</span></label>
+            {% if mode == 'create' %}
+                <div class="input-with-icon">
+                    <span class="icon">@</span>
+                    <input type="text" name="username" required autofocus
+                           value="" placeholder="登录名,建议英文或数字(创建后不可修改)"
+                           pattern="[A-Za-z0-9_]{3,30}" title="3-30 个字符,仅英文/数字/下划线">
+                </div>
+            {% else %}
+                <div class="input-with-icon disabled">
+                    <span class="icon">@</span>
+                    <input type="text" value="{{ form_user.username }}" disabled>
+                </div>
+                <div class="hint">用户名为唯一标识,不可修改</div>
+            {% endif %}
+        </div>
+
+        <div class="form-grid">
+            <div class="form-row">
+                <label>真实姓名</label>
+                <div class="input-with-icon">
+                    <span class="icon">👤</span>
+                    <input type="text" name="first_name"
+                           value="{{ form_user.first_name|default:'' }}"
+                           placeholder="如:张老师 / 王小明">
+                </div>
+            </div>
+            <div class="form-row">
+                <label>邮箱</label>
+                <div class="input-with-icon">
+                    <span class="icon">✉</span>
+                    <input type="email" name="email"
+                           value="{{ form_user.email|default:'' }}"
+                           placeholder="选填,用于找回密码">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card user-form-card">
+        <div class="section-title"><span class="dot"></span>身份与角色</div>
+
+        {% if form_user.profile.role == 'admin' %}
+            {# 管理员账号:角色锁定,不展示选择 #}
+            <div class="role-locked">
+                <span class="lock-icon">🛡️</span>
+                <div>
+                    <strong>管理员账号</strong>
+                    <div class="hint">管理员身份不可在此页面修改。如需调整,请通过 Django shell。</div>
+                </div>
+            </div>
+        {% else %}
+            <div class="form-row">
+                <label>角色<span class="req">*</span></label>
+                <div class="role-picker">
+                    <label class="role-card {% if form_user.profile.role == 'student' or mode == 'create' %}selected{% endif %}">
+                        <input type="radio" name="role" value="student"
+                               {% if form_user.profile.role == 'student' or mode == 'create' %}checked{% endif %}>
+                        <div class="role-emoji">🎓</div>
+                        <div class="role-name">学生</div>
+                        <div class="role-desc">登录参加考试、查看成绩</div>
+                    </label>
+                    <label class="role-card {% if form_user.profile.role == 'teacher' %}selected{% endif %}">
+                        <input type="radio" name="role" value="teacher"
+                               {% if form_user.profile.role == 'teacher' %}checked{% endif %}>
+                        <div class="role-emoji">👨‍🏫</div>
+                        <div class="role-name">教师</div>
+                        <div class="role-desc">创建班级/课程/试卷、批阅</div>
+                    </label>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="form-row">
+            <label>学号 / 工号</label>
+            <div class="input-with-icon">
+                <span class="icon">#</span>
+                <input type="text" name="student_id"
+                       value="{{ form_user.profile.student_id|default:'' }}"
+                       placeholder="学生用学号(S2021001),教师用工号(T001)">
+            </div>
+        </div>
+    </div>
+
+    {% if mode == 'create' %}
+    <div class="card user-form-card">
+        <div class="section-title"><span class="dot"></span>登录密码</div>
+        <div class="form-row">
+            <label>初始密码</label>
+            <div class="input-with-icon">
+                <span class="icon">🔑</span>
+                <input type="text" name="password" id="pwd-input"
+                       placeholder="留空自动生成 10 位随机密码">
+                <button type="button" class="gen-btn" onclick="genPwd()">🎲 随机生成</button>
+            </div>
+            <div class="hint">💡 用户首次登录后建议自行修改密码。密码将在创建成功后显示一次。</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="form-actions">
+        <button type="submit" class="btn lg">
+            {% if mode == 'create' %}✓ 创建账号{% else %}💾 保存修改{% endif %}
+        </button>
+        <a href="{% url 'users:manage_users' %}" class="btn ghost lg">取消</a>
+    </div>
+</form>
+
+<script>
+// 角色卡片单选联动
+document.querySelectorAll('.role-picker .role-card').forEach(card => {
+    card.addEventListener('click', () => {
+        document.querySelectorAll('.role-picker .role-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+    });
+});
+
+// 随机密码生成
+function genPwd(){
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let p = '';
+    for (let i=0; i<10; i++) p += chars.charAt(Math.floor(Math.random()*chars.length));
+    document.getElementById('pwd-input').value = p;
+}
+</script>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.user-form-hero{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;background:linear-gradient(135deg,#fff5f5 0%,#fff 60%);border-radius:12px;margin-bottom:16px;border-left:4px solid #C42A2A;}
+.user-form-hero .hero-left{display:flex;align-items:center;gap:16px;}
+.user-form-hero .hero-icon{width:56px;height:56px;border-radius:16px;background:#C42A2A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;box-shadow:0 6px 16px rgba(196,42,42,.25);}
+.user-form-hero h2{font-size:20px;color:#1d2129;margin:0 0 4px;}
+.user-form-hero .hero-sub{color:#86909c;font-size:13px;margin:0;}
+
+.user-form{max-width:760px;}
+.user-form-card{padding:24px 28px;margin-bottom:16px;}
+.section-title{font-size:15px;font-weight:600;color:#1d2129;margin-bottom:18px;display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid #f2f3f5;}
+.section-title .dot{width:4px;height:16px;background:#C42A2A;border-radius:2px;}
+
+.form-row{margin-bottom:18px;}
+.form-row:last-child{margin-bottom:0;}
+.form-row label{display:block;font-size:13px;color:#4e5969;margin-bottom:8px;font-weight:500;}
+.form-row .req{color:#C42A2A;margin-left:2px;}
+.form-row .hint{font-size:12px;color:#86909c;margin-top:6px;line-height:1.5;}
+
+.input-with-icon{display:flex;align-items:center;background:#fafafa;border:1px solid #e5e5e5;border-radius:8px;transition:all .2s;overflow:hidden;}
+.input-with-icon:focus-within{border-color:#C42A2A;background:#fff;box-shadow:0 0 0 3px rgba(196,42,42,.08);}
+.input-with-icon.disabled{background:#f5f5f5;opacity:.75;}
+.input-with-icon .icon{padding:0 14px;color:#86909c;font-size:15px;width:44px;text-align:center;border-right:1px solid #eee;}
+.input-with-icon input{flex:1;padding:12px 14px;border:none;background:transparent;font-size:14px;font-family:inherit;outline:none;color:#1d2129;}
+.input-with-icon input:disabled{color:#86909c;}
+.input-with-icon .gen-btn{background:transparent;border:none;padding:0 14px;color:#C42A2A;font-size:13px;cursor:pointer;white-space:nowrap;border-left:1px solid #eee;height:44px;transition:background .2s;}
+.input-with-icon .gen-btn:hover{background:#fff5f5;}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+
+/* 角色卡片 */
+.role-picker{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.role-card{cursor:pointer;padding:18px 18px 16px;border:2px solid #eee;border-radius:10px;background:#fff;transition:all .2s;display:flex;flex-direction:column;gap:4px;position:relative;}
+.role-card:hover{border-color:#C42A2A;transform:translateY(-1px);box-shadow:0 4px 12px rgba(196,42,42,.08);}
+.role-card.selected{border-color:#C42A2A;background:#fff5f5;box-shadow:0 4px 12px rgba(196,42,42,.12);}
+.role-card.selected::after{content:"✓";position:absolute;top:10px;right:12px;width:22px;height:22px;border-radius:50%;background:#C42A2A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+.role-card input[type=radio]{position:absolute;opacity:0;pointer-events:none;}
+.role-card .role-emoji{font-size:28px;margin-bottom:4px;}
+.role-card .role-name{font-size:15px;font-weight:600;color:#1d2129;}
+.role-card .role-desc{font-size:12px;color:#86909c;line-height:1.4;}
+
+.role-locked{display:flex;align-items:center;gap:14px;padding:16px 20px;background:#fff5f5;border:1px solid #ffd6d6;border-radius:10px;}
+.role-locked .lock-icon{font-size:32px;}
+.role-locked strong{color:#C42A2A;font-size:15px;}
+
+.form-actions{display:flex;gap:12px;margin-top:20px;}
+.form-actions .btn.lg{padding:12px 32px;font-size:15px;}
+
+@media (max-width:640px){
+    .form-grid,.role-picker{grid-template-columns:1fr;}
+    .user-form-hero{flex-direction:column;align-items:flex-start;gap:14px;}
+}
+</style>
+{% endblock %}

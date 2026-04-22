@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}试题库{% endblock %}
+{% block page_title %}试题库{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        📑 我的试题
+        <a href="{% url 'exams:question_create' %}" class="btn">+ 添加试题</a>
+    </div>
+    <form method="get" style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <select name="subject" class="form-control" style="width:auto;">
+            <option value="">全部科目</option>
+            {% for s in subjects %}
+                <option value="{{ s }}" {% if s == current_subject %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+        <select name="type" class="form-control" style="width:auto;">
+            <option value="">全部题型</option>
+            {% for k, v in type_choices %}
+                <option value="{{ k }}" {% if k == current_type %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn outline">筛选</button>
+    </form>
+    <table class="data">
+        <thead><tr><th>题目</th><th>类型</th><th>科目</th><th>分值</th><th>创建时间</th><th>操作</th></tr></thead>
+        <tbody>
+            {% for q in questions %}
+            <tr>
+                <td style="max-width:380px;">
+                    <div>{{ q.content|truncatechars:80 }}</div>
+                    <div style="font-size:12px;color:#86909c;margin-top:4px;">答案：{{ q.answer|truncatechars:40 }}</div>
+                </td>
+                <td><span class="tag blue">{{ q.get_type_display }}</span></td>
+                <td>{% if q.subject %}{{ q.subject }}{% else %}-{% endif %}</td>
+                <td>{{ q.score }}</td>
+                <td>{{ q.created_at|date:"Y-m-d" }}</td>
+                <td>
+                    <a href="{% url 'exams:question_edit' q.id %}" class="btn ghost sm">编辑</a>
+                    <a href="{% url 'exams:question_delete' q.id %}" class="btn ghost sm"
+                       onclick="return confirm('确认删除？')"
+                       style="color:var(--danger);border-color:var(--danger);">删除</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6"><div class="empty">暂无试题，去<a href="{% url 'exams:question_create' %}">创建</a>吧</div></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

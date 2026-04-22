@@ -1,0 +1,64 @@
+{% with role=user.profile.role url_name=request.resolver_match.url_name ns=request.resolver_match.namespace %}
+<nav class="top-nav">
+    <a href="{% url 'exams:dashboard' %}" class="brand-logo">
+        <div class="mark">雨</div>
+        <div class="name">长江<em>·</em>云阅卷</div>
+    </a>
+
+    <div class="nav-menu">
+        <a href="{% url 'exams:dashboard' %}"
+           class="{% if url_name == 'dashboard' %}active{% endif %}">首页</a>
+
+        {% if role == 'student' %}
+            <a href="{% url 'classes:my_classes' %}"
+               class="{% if ns == 'classes' %}active{% endif %}">我听的课</a>
+            <a href="{% url 'exams:my_todo' %}"
+               class="{% if url_name == 'my_todo' %}active{% endif %}">我的待办</a>
+            <a href="{% url 'exams:student_record_list' %}"
+               class="{% if url_name == 'student_record_list' %}active{% endif %}">我的成绩</a>
+            <a href="{% url 'exams:wrong_question_list' %}"
+               class="{% if url_name == 'wrong_question_list' %}active{% endif %}">错题集</a>
+
+        {% elif role == 'teacher' %}
+            <a href="{% url 'classes:my_classes' %}"
+               class="{% if ns == 'classes' %}active{% endif %}">我教的课</a>
+            <a href="{% url 'exams:question_list' %}"
+               class="{% if url_name == 'question_list' %}active{% endif %}">试题库</a>
+            <a href="{% url 'exams:paper_list' %}"
+               class="{% if url_name == 'paper_list' %}active{% endif %}">试卷管理</a>
+            <a href="{% url 'exams:teacher_correction' %}"
+               class="{% if url_name == 'teacher_correction' %}active{% endif %}">阅卷中心</a>
+
+        {% elif role == 'admin' %}
+            <a href="{% url 'users:manage_users' %}"
+               class="{% if url_name == 'manage_users' %}active{% endif %}">用户管理</a>
+            <a href="{% url 'users:manage_classes' %}"
+               class="{% if url_name == 'manage_classes' %}active{% endif %}">班级管理</a>
+            <a href="{% url 'users:manage_courses' %}"
+               class="{% if url_name == 'manage_courses' %}active{% endif %}">课程管理</a>
+            <a href="{% url 'users:manage_papers' %}"
+               class="{% if url_name == 'manage_papers' %}active{% endif %}">试卷审核</a>
+            <a href="{% url 'users:broadcast_notice' %}"
+               class="{% if url_name == 'broadcast_notice' %}active{% endif %}">系统通知</a>
+        {% endif %}
+
+        <a href="{% url 'notifications:list' %}"
+           class="{% if ns == 'notifications' %}active{% endif %}">通知</a>
+    </div>
+
+    <div class="nav-actions">
+        <a href="{% url 'notifications:list' %}" class="bell" title="消息">
+            🔔
+            {% if unread_notification_count %}
+                <span class="badge">{{ unread_notification_count }}</span>
+            {% endif %}
+        </a>
+        <div class="user-box">
+            <div class="avatar">{{ user.username|slice:":1"|upper }}</div>
+            <span style="font-weight:500;">{{ user.first_name|default:user.username }}</span>
+            <span class="role-badge">{{ user.profile.get_role_display }}</span>
+        </div>
+        <a href="{% url 'users:logout' %}" class="nav-logout">退出</a>
+    </div>
+</nav>
+{% endwith %}

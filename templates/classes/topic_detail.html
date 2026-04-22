@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}{{ topic.title }}{% endblock %}
+{% block page_title %}{{ topic.title }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{% url 'classes:course_detail' course.id %}?tab=discussions" class="btn ghost sm">
+        ← 返回《{{ course.name }}》讨论区
+    </a>
+</div>
+
+{# 主题帖 #}
+<div class="card topic-main">
+    <div class="topic-head">
+        <div class="avatar-lg">{{ topic.author.username|slice:":1"|upper }}</div>
+        <div style="flex:1;">
+            <div class="topic-title">{{ topic.title }}</div>
+            <div class="topic-meta">
+                <strong>{{ topic.author.first_name|default:topic.author.username }}</strong>
+                {% if topic.author.profile.role == 'teacher' %}<span class="tag red">教师</span>{% endif %}
+                · 发布于 {{ topic.created_at|date:"Y-m-d H:i" }}
+            </div>
+        </div>
+        {% if topic.author_id == user.id or user.profile.role == 'admin' or user.id == course.teacher_id or user.id == course.classroom.head_teacher_id %}
+            <a href="{% url 'classes:topic_delete' course.id topic.id %}"
+               onclick="return confirm('确定删除该主题？所有回复将一并删除。');"
+               class="btn ghost sm">删除主题</a>
+        {% endif %}
+    </div>
+    <div class="topic-body">{{ topic.content|linebreaksbr }}</div>
+</div>
+
+{# 回复列表 #}
+<div class="card">
+    <div class="card-title">💬 回复 ({{ replies|length }})</div>
+    {% if replies %}
+        <div class="reply-list">
+        {% for r in replies %}
+            <div class="reply-item">
+                <div class="avatar-md">{{ r.author.username|slice:":1"|upper }}</div>
+                <div style="flex:1;">
+                    <div class="reply-meta">
+                        <strong>{{ r.author.first_name|default:r.author.username }}</strong>
+                        {% if r.author.profile.role == 'teacher' %}<span class="tag red">教师</span>{% endif %}
+                        <span style="color:#86909c;margin-left:8px;font-size:12px;">
+                            {{ r.created_at|date:"Y-m-d H:i" }} · #{{ forloop.counter }}楼
+                        </span>
+                    </div>
+                    <div class="reply-body">{{ r.content|linebreaksbr }}</div>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty">还没有人回复，来做第一个回复者吧！</div>
+    {% endif %}
+</div>
+
+{# 回复表单 #}
+<div class="card">
+    <div class="card-title">✍️ 我要回复</div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            {{ form.content }}
+            {% if form.content.errors %}<div class="error">{{ form.content.errors }}</div>{% endif %}
+        </div>
+        <button type="submit" class="btn">发布回复</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.topic-main{padding:20px;}
+.topic-head{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;}
+.avatar-lg{width:48px;height:48px;border-radius:50%;background:#C42A2A;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;}
+.avatar-md{width:36px;height:36px;border-radius:50%;background:#f2f3f5;color:#4e5969;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0;}
+.topic-title{font-size:18px;font-weight:600;color:#1d2129;margin-bottom:4px;}
+.topic-meta{font-size:13px;color:#86909c;}
+.topic-body{margin-top:12px;padding:12px 0;border-top:1px dashed #e5e6eb;line-height:1.8;color:#4e5969;}
+.reply-list{display:flex;flex-direction:column;gap:14px;}
+.reply-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px dashed #f2f3f5;}
+.reply-item:last-child{border-bottom:0;}
+.reply-meta{margin-bottom:4px;color:#1d2129;}
+.reply-body{color:#4e5969;line-height:1.7;}
+.tag.red{background:#ffeaea;color:#C42A2A;padding:1px 8px;border-radius:4px;font-size:11px;}
+</style>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">{{ title }}</div>
+    <form method="post">
+        {% csrf_token %}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-row">
+                <label>科目</label>
+                {{ form.subject }}
+            </div>
+            <div class="form-row">
+                <label>题型 *</label>
+                {{ form.type }}
+            </div>
+        </div>
+        <div class="form-row">
+            <label>题目内容 *</label>
+            {{ form.content }}
+        </div>
+        <div class="form-row">
+            <label>选项（仅选择题）</label>
+            {{ form.options }}
+            <div style="color:#86909c;font-size:12px;margin-top:4px;">每行一个选项，格式：A.内容</div>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;">
+            <div class="form-row">
+                <label>标准答案 *</label>
+                {{ form.answer }}
+            </div>
+            <div class="form-row">
+                <label>分值 *</label>
+                {{ form.score }}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label>题目解析（学生在错题集可见）</label>
+            {{ form.explanation }}
+        </div>
+
+        <div class="card" style="background:#fafafa;">
+            <div style="font-weight:600;margin-bottom:8px;">⚙️ 主观题自动阅卷配置（仅简答题生效）</div>
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;">
+                <div class="form-row">
+                    <label>关键词得分点（JSON）</label>
+                    {{ form.keyword_points }}
+                    <div style="color:#86909c;font-size:12px;margin-top:4px;">
+                        例如：<code>[{"keyword":"递归","weight":0.5},{"keyword":"栈","weight":0.5}]</code><br/>
+                        也可写成逗号分隔：<code>递归, 栈, 函数</code>（等权重）
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label>相似度阈值 (0-1)</label>
+                    {{ form.similarity_threshold }}
+                    <div style="color:#86909c;font-size:12px;margin-top:4px;">越高评分越严格</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:16px;">
+            <button type="submit" class="btn">💾 保存</button>
+            <a href="{% url 'exams:question_list' %}" class="btn ghost">取消</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

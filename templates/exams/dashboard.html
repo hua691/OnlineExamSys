@@ -1,0 +1,495 @@
+{% extends 'base.html' %}
+{% block title %}首页 · 长江云阅卷{% endblock %}
+{% block page_title %}{% endblock %}
+
+{% block content %}
+{# ============ 通用 Hero 欢迎横幅 ============ #}
+<div class="dash-hero">
+    <div class="hero-main">
+        <div class="hero-greeting">
+            <span class="greet">👋 你好，</span>
+            <span class="name">{{ user.first_name|default:user.username }}</span>
+            <span class="role-chip">
+                {% if is_teacher %}👨‍🏫 教师
+                {% elif is_admin %}🛡️ 管理员
+                {% else %}🎓 学生{% endif %}
+            </span>
+        </div>
+        <p class="hero-sub">
+            {% if is_teacher %}欢迎回到「长江 · 云阅卷」, 今天也要把教学安排得明明白白
+            {% elif is_admin %}系统概况一览, 帮助你快速掌握整个平台的运行状况
+            {% else %}新的学习旅程从这里开始, 加油!{% endif %}
+        </p>
+    </div>
+    <div class="hero-right">
+        <div class="date-block">
+            <div class="d-num" id="today-num"></div>
+            <div class="d-txt" id="today-txt"></div>
+        </div>
+    </div>
+</div>
+
+{% if is_teacher %}
+{# ================= 教师仪表盘 ================= #}
+<div class="stat-grid">
+    <div class="stat-card" style="--c:#C42A2A;">
+        <div class="s-top"><span class="s-icon">📚</span><span class="s-trend">我教</span></div>
+        <div class="s-num">{{ teaching_courses }}</div>
+        <div class="s-lab">课程</div>
+    </div>
+    <div class="stat-card" style="--c:#f0a030;">
+        <div class="s-top"><span class="s-icon">🏫</span><span class="s-trend">班主任</span></div>
+        <div class="s-num">{{ headed_classes }}</div>
+        <div class="s-lab">班级</div>
+    </div>
+    <div class="stat-card" style="--c:#1677ff;">
+        <div class="s-top"><span class="s-icon">📋</span><span class="s-trend">题库</span></div>
+        <div class="s-num">{{ question_count }}</div>
+        <div class="s-lab">试题</div>
+    </div>
+    <div class="stat-card" style="--c:#52c41a;">
+        <div class="s-top"><span class="s-icon">📄</span><span class="s-trend">试卷</span></div>
+        <div class="s-num">{{ paper_count }}</div>
+        <div class="s-lab">已创建</div>
+    </div>
+    <div class="stat-card" style="--c:#e15c5c;">
+        <div class="s-top"><span class="s-icon">✍️</span><span class="s-trend">待办</span></div>
+        <div class="s-num">{{ pending_correction_count }}</div>
+        <div class="s-lab">待批阅</div>
+    </div>
+    <div class="stat-card" style="--c:#7c3aed;">
+        <div class="s-top"><span class="s-icon">📊</span><span class="s-trend">本周</span></div>
+        <div class="s-num">{{ week_submission_count }}</div>
+        <div class="s-lab">新提交</div>
+    </div>
+</div>
+
+<div class="dash-grid">
+    <div class="card">
+        <div class="card-title"><span class="dot"></span>🚀 快速入口</div>
+        <div class="quick-actions">
+            <a href="{% url 'classes:my_classes' %}" class="quick-item"><span class="qi-ico">📚</span><span class="qi-name">我教的课</span></a>
+            <a href="{% url 'classes:create_class' %}" class="quick-item"><span class="qi-ico">🏫</span><span class="qi-name">新建班级</span></a>
+            <a href="{% url 'classes:create_course' %}" class="quick-item"><span class="qi-ico">📘</span><span class="qi-name">创建课程</span></a>
+            <a href="{% url 'exams:question_create' %}" class="quick-item"><span class="qi-ico">➕</span><span class="qi-name">录入试题</span></a>
+            <a href="{% url 'exams:paper_create' %}" class="quick-item"><span class="qi-ico">📄</span><span class="qi-name">发布试卷</span></a>
+            <a href="{% url 'exams:teacher_correction' %}" class="quick-item"><span class="qi-ico">✍️</span><span class="qi-name">阅卷中心</span></a>
+        </div>
+    </div>
+    <div class="card info-card">
+        <div class="card-title"><span class="dot"></span>📈 教学概况</div>
+        <div class="big-metric">
+            <div class="metric-n">{{ avg_score|default:0 }}<span class="unit">分</span></div>
+            <div class="metric-l">学生平均得分</div>
+        </div>
+        <div class="metric-hint">
+            已批阅的试卷中学生的平均得分。数值越高说明学生掌握得越好。
+        </div>
+    </div>
+</div>
+
+<div class="dash-grid-2">
+    <div class="card">
+        <div class="card-title"><span class="dot"></span>📄 我最近创建的试卷
+            <a href="{% url 'exams:paper_list' %}" class="card-more">查看全部 →</a>
+        </div>
+        {% if recent_papers %}
+            <table class="data compact">
+                <thead><tr><th>试卷</th><th>课程</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody>
+                {% for p in recent_papers %}
+                    <tr>
+                        <td><strong>{{ p.title|truncatechars:20 }}</strong></td>
+                        <td style="color:#86909c;">{{ p.course.name|default:'公共'|truncatechars:12 }}</td>
+                        <td>{% if p.is_published %}<span class="tag green">已发布</span>{% else %}<span class="tag gray">草稿</span>{% endif %}</td>
+                        <td><a href="{% url 'exams:paper_edit' p.id %}" class="btn ghost xs">编辑</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-mini">还没有试卷,<a href="{% url 'exams:paper_create' %}">立即创建 →</a></div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-title"><span class="dot"></span>📥 最近学生提交
+            <a href="{% url 'exams:teacher_correction' %}" class="card-more">去阅卷 →</a>
+        </div>
+        {% if recent_submissions %}
+            <div class="activity-list">
+            {% for r in recent_submissions %}
+                <div class="activity-item">
+                    <div class="a-avatar">{{ r.student.username|slice:":1"|upper }}</div>
+                    <div class="a-body">
+                        <div><strong>{{ r.student.first_name|default:r.student.username }}</strong> 提交了 <em>{{ r.paper.title|truncatechars:20 }}</em></div>
+                        <div class="a-meta">
+                            {% if r.status == 'graded' %}<span class="tag green xs">已批阅 {{ r.score }}分</span>
+                            {% else %}<span class="tag orange xs">待批阅</span>{% endif %}
+                            · <span>{{ r.end_time|date:"m-d H:i" }}</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-mini">还没有学生提交答卷</div>
+        {% endif %}
+    </div>
+</div>
+
+{% elif is_admin %}
+{# ================= 管理员仪表盘 ================= #}
+<div class="stat-grid">
+    <div class="stat-card" style="--c:#C42A2A;">
+        <div class="s-top"><span class="s-icon">👥</span><span class="s-trend">+{{ new_users_week }} 本周</span></div>
+        <div class="s-num">{{ total_user }}</div>
+        <div class="s-lab">用户总数</div>
+    </div>
+    <div class="stat-card" style="--c:#f0a030;">
+        <div class="s-top"><span class="s-icon">👨‍🏫</span></div>
+        <div class="s-num">{{ teacher_count }}</div>
+        <div class="s-lab">教师</div>
+    </div>
+    <div class="stat-card" style="--c:#1677ff;">
+        <div class="s-top"><span class="s-icon">🎓</span></div>
+        <div class="s-num">{{ student_count }}</div>
+        <div class="s-lab">学生</div>
+    </div>
+    <div class="stat-card" style="--c:#52c41a;">
+        <div class="s-top"><span class="s-icon">🏫</span></div>
+        <div class="s-num">{{ total_class }}</div>
+        <div class="s-lab">班级</div>
+    </div>
+    <div class="stat-card" style="--c:#7c3aed;">
+        <div class="s-top"><span class="s-icon">📘</span></div>
+        <div class="s-num">{{ total_course }}</div>
+        <div class="s-lab">课程</div>
+    </div>
+    <div class="stat-card" style="--c:#e15c5c;">
+        <div class="s-top"><span class="s-icon">📄</span><span class="s-trend">+{{ new_papers_week }} 本周</span></div>
+        <div class="s-num">{{ total_paper }}</div>
+        <div class="s-lab">试卷 · {{ total_paper_published }} 已发布</div>
+    </div>
+    <div class="stat-card" style="--c:#0891b2;">
+        <div class="s-top"><span class="s-icon">📝</span></div>
+        <div class="s-num">{{ total_question }}</div>
+        <div class="s-lab">题库</div>
+    </div>
+    <div class="stat-card" style="--c:#ca8a04;">
+        <div class="s-top"><span class="s-icon">✍️</span><span class="s-trend">+{{ new_records_today }} 今日</span></div>
+        <div class="s-num">{{ total_record }}</div>
+        <div class="s-lab">答卷总数</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title"><span class="dot"></span>🔧 系统管理</div>
+    <div class="quick-actions">
+        <a href="{% url 'users:manage_users' %}" class="quick-item"><span class="qi-ico">👥</span><span class="qi-name">用户管理</span></a>
+        <a href="{% url 'users:create_user' %}" class="quick-item"><span class="qi-ico">👤➕</span><span class="qi-name">新建用户</span></a>
+        <a href="{% url 'users:manage_classes' %}" class="quick-item"><span class="qi-ico">🏫</span><span class="qi-name">班级管理</span></a>
+        <a href="{% url 'users:manage_courses' %}" class="quick-item"><span class="qi-ico">📘</span><span class="qi-name">课程管理</span></a>
+        <a href="{% url 'users:manage_papers' %}" class="quick-item"><span class="qi-ico">📄</span><span class="qi-name">试卷审核</span></a>
+        <a href="{% url 'users:broadcast_notice' %}" class="quick-item highlight"><span class="qi-ico">📢</span><span class="qi-name">系统通知</span></a>
+    </div>
+</div>
+
+<div class="dash-grid-2">
+    <div class="card">
+        <div class="card-title"><span class="dot"></span>🆕 最近注册用户
+            <a href="{% url 'users:manage_users' %}" class="card-more">全部用户 →</a>
+        </div>
+        {% if recent_users %}
+            <div class="activity-list">
+            {% for u in recent_users %}
+                <div class="activity-item">
+                    <div class="a-avatar">{{ u.username|slice:":1"|upper }}</div>
+                    <div class="a-body">
+                        <div>
+                            <strong>{{ u.first_name|default:u.username }}</strong>
+                            {% if u.profile.role == 'admin' %}<span class="tag red xs">🛡️ 管理员</span>
+                            {% elif u.profile.role == 'teacher' %}<span class="tag orange xs">👨‍🏫 教师</span>
+                            {% else %}<span class="tag blue xs">🎓 学生</span>{% endif %}
+                        </div>
+                        <div class="a-meta">@{{ u.username }} · 注册于 {{ u.date_joined|date:"Y-m-d" }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-mini">还没有用户</div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-title"><span class="dot"></span>📄 最近创建的试卷
+            <a href="{% url 'users:manage_papers' %}" class="card-more">试卷审核 →</a>
+        </div>
+        {% if recent_papers_sys %}
+            <table class="data compact">
+                <thead><tr><th>试卷</th><th>创建者</th><th>状态</th></tr></thead>
+                <tbody>
+                {% for p in recent_papers_sys %}
+                    <tr>
+                        <td><strong>{{ p.title|truncatechars:22 }}</strong></td>
+                        <td style="color:#86909c;">{{ p.created_by.first_name|default:p.created_by.username }}</td>
+                        <td>{% if p.is_published %}<span class="tag green xs">已发布</span>{% else %}<span class="tag gray xs">草稿</span>{% endif %}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-mini">还没有试卷</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if recent_broadcasts %}
+<div class="card">
+    <div class="card-title"><span class="dot"></span>📢 我最近发送的系统通知
+        <a href="{% url 'users:broadcast_notice' %}" class="card-more">发新通知 →</a>
+    </div>
+    <div class="bcast-mini">
+    {% for n in recent_broadcasts %}
+        <div class="bcast-card">
+            <div class="b-title">{{ n.title|truncatechars:30 }}</div>
+            <div class="b-body">{{ n.message|truncatechars:70 }}</div>
+            <div class="b-meta">📅 {{ n.created_at|date:"m-d H:i" }}</div>
+        </div>
+    {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+{# ================= 学生仪表盘 ================= #}
+<div class="stat-grid">
+    <div class="stat-card" style="--c:#C42A2A;">
+        <div class="s-top"><span class="s-icon">📘</span></div>
+        <div class="s-num">{{ joined_class_count }}</div>
+        <div class="s-lab">已加入班级</div>
+    </div>
+    <div class="stat-card" style="--c:#f0a030;">
+        <div class="s-top"><span class="s-icon">⏰</span></div>
+        <div class="s-num">{{ uncompleted_paper_count }}</div>
+        <div class="s-lab">待参加考试</div>
+    </div>
+    <div class="stat-card" style="--c:#52c41a;">
+        <div class="s-top"><span class="s-icon">✅</span></div>
+        <div class="s-num">{{ completed_paper_count }}</div>
+        <div class="s-lab">已完成</div>
+    </div>
+    <div class="stat-card" style="--c:#7c3aed;">
+        <div class="s-top"><span class="s-icon">📊</span></div>
+        <div class="s-num">{{ avg_score|default:0 }}<span class="unit" style="font-size:14px;">分</span></div>
+        <div class="s-lab">平均得分</div>
+    </div>
+    <div class="stat-card" style="--c:#e15c5c;">
+        <div class="s-top"><span class="s-icon">❌</span></div>
+        <div class="s-num">{{ wrong_count }}</div>
+        <div class="s-lab">错题收藏</div>
+    </div>
+</div>
+
+<div class="dash-grid">
+    <div class="card">
+        <div class="card-title"><span class="dot"></span>🚀 常用入口</div>
+        <div class="quick-actions">
+            <a href="{% url 'classes:my_classes' %}" class="quick-item"><span class="qi-ico">📚</span><span class="qi-name">我听的课</span></a>
+            <a href="{% url 'classes:join_class' %}" class="quick-item"><span class="qi-ico">🔗</span><span class="qi-name">加入班级</span></a>
+            <a href="{% url 'exams:my_todo' %}" class="quick-item highlight"><span class="qi-ico">📝</span><span class="qi-name">我的待办</span></a>
+            <a href="{% url 'exams:student_record_list' %}" class="quick-item"><span class="qi-ico">📊</span><span class="qi-name">我的成绩</span></a>
+            <a href="{% url 'exams:wrong_question_list' %}" class="quick-item"><span class="qi-ico">❌</span><span class="qi-name">错题集</span></a>
+        </div>
+    </div>
+    <div class="card info-card">
+        <div class="card-title"><span class="dot"></span>🎯 学习概况</div>
+        <div class="big-metric">
+            <div class="metric-n">{{ avg_score|default:0 }}<span class="unit">分</span></div>
+            <div class="metric-l">我的平均得分</div>
+        </div>
+        <div class="metric-hint">
+            基于所有已批阅的试卷。点击「我的成绩」查看详细历史记录。
+        </div>
+    </div>
+</div>
+
+<div class="dash-grid-2">
+    <div class="card">
+        <div class="card-title"><span class="dot"></span>⏰ 即将到来的考试
+            <a href="{% url 'exams:my_todo' %}" class="card-more">查看全部 →</a>
+        </div>
+        {% if upcoming_papers %}
+            <table class="data compact">
+                <thead><tr><th>试卷</th><th>时长</th><th>题数</th><th>操作</th></tr></thead>
+                <tbody>
+                {% for p in upcoming_papers %}
+                    <tr>
+                        <td><strong>{{ p.title|truncatechars:22 }}</strong></td>
+                        <td>{{ p.duration }} 分</td>
+                        <td>{{ p.questions.count }}</td>
+                        <td><a href="{% url 'exams:exam_paper_detail' p.id %}" class="btn xs">进入</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-mini">🎉 当前没有待参加的考试</div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-title"><span class="dot"></span>📊 最近成绩
+            <a href="{% url 'exams:student_record_list' %}" class="card-more">全部记录 →</a>
+        </div>
+        {% if recent_results %}
+            <div class="activity-list">
+            {% for r in recent_results %}
+                <div class="activity-item">
+                    <div class="a-avatar score-{% if r.score >= 90 %}gold{% elif r.score >= 60 %}pass{% else %}fail{% endif %}">
+                        {% if r.status == 'graded' %}{{ r.score|default:0|floatformat:0 }}{% else %}⏳{% endif %}
+                    </div>
+                    <div class="a-body">
+                        <div><strong>{{ r.paper.title|truncatechars:24 }}</strong></div>
+                        <div class="a-meta">
+                            {% if r.status == 'graded' %}<span class="tag green xs">已批阅</span>
+                            {% else %}<span class="tag orange xs">待批阅</span>{% endif %}
+                            · {{ r.end_time|date:"m-d H:i" }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-mini">还没有考试记录</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if my_classes %}
+<div class="card">
+    <div class="card-title"><span class="dot"></span>🏫 我的班级</div>
+    <div class="mini-class-grid">
+    {% for cls in my_classes %}
+        <a href="{% url 'classes:class_detail' cls.id %}" class="mini-class">
+            <div class="mc-top">
+                <span class="mc-badge">{{ cls.name|slice:":2" }}</span>
+                <span class="mc-name">{{ cls.name }}</span>
+            </div>
+            <div class="mc-meta">
+                👨‍🏫 {{ cls.head_teacher.first_name|default:cls.head_teacher.username }}
+                · 🎓 {{ cls.grade|default:'未设年级' }}
+            </div>
+        </a>
+    {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+<script>
+(function(){
+    const d = new Date();
+    const weekdays = ['周日','周一','周二','周三','周四','周五','周六'];
+    document.getElementById('today-num').textContent = d.getDate();
+    document.getElementById('today-txt').textContent = (d.getMonth()+1)+'月 · '+weekdays[d.getDay()];
+})();
+</script>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ============ Hero 欢迎横幅 ============ */
+.dash-hero{display:flex;align-items:center;justify-content:space-between;padding:24px 28px;background:linear-gradient(135deg,#C42A2A 0%,#A51E1E 100%);color:#fff;border-radius:14px;margin-bottom:18px;box-shadow:0 8px 24px rgba(196,42,42,.25);position:relative;overflow:hidden;}
+.dash-hero::before{content:"";position:absolute;right:-40px;bottom:-40px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.06);}
+.dash-hero::after{content:"";position:absolute;right:40px;top:-80px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.05);}
+.dash-hero .hero-main{position:relative;z-index:1;}
+.dash-hero .hero-greeting{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.dash-hero .greet{font-size:20px;}
+.dash-hero .name{font-size:26px;font-weight:700;letter-spacing:.5px;}
+.dash-hero .role-chip{font-size:12px;background:rgba(255,255,255,.18);padding:4px 12px;border-radius:14px;backdrop-filter:blur(6px);}
+.dash-hero .hero-sub{color:rgba(255,255,255,.85);font-size:14px;margin:8px 0 0;}
+.dash-hero .hero-right{position:relative;z-index:1;}
+.date-block{text-align:center;background:rgba(255,255,255,.14);padding:12px 20px;border-radius:12px;backdrop-filter:blur(6px);min-width:100px;}
+.date-block .d-num{font-size:32px;font-weight:700;line-height:1;}
+.date-block .d-txt{font-size:12px;margin-top:4px;color:rgba(255,255,255,.85);}
+
+/* ============ 统计卡片 ============ */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px;}
+.stat-card{background:#fff;padding:18px 20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.05);border-top:3px solid var(--c);transition:all .25s;}
+.stat-card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.08);}
+.stat-card .s-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.stat-card .s-icon{font-size:24px;}
+.stat-card .s-trend{font-size:11px;color:var(--c);background:color-mix(in srgb, var(--c) 10%, #fff);padding:2px 8px;border-radius:10px;font-weight:500;}
+.stat-card .s-num{font-size:28px;font-weight:700;color:#1d2129;line-height:1;letter-spacing:-.5px;}
+.stat-card .s-num .unit{font-size:14px;color:#86909c;margin-left:2px;}
+.stat-card .s-lab{color:#86909c;font-size:12px;margin-top:6px;}
+
+/* ============ 双列布局 ============ */
+.dash-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
+.dash-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+@media (max-width:900px){
+    .dash-grid,.dash-grid-2{grid-template-columns:1fr;}
+}
+
+/* ============ 快速入口 ============ */
+.quick-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;}
+.quick-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px 12px;background:#fafafa;border-radius:10px;color:#4e5969;text-decoration:none;transition:all .25s;border:1.5px solid transparent;text-align:center;}
+.quick-item:hover{background:#fff5f5;color:#C42A2A;border-color:#C42A2A;transform:translateY(-2px);box-shadow:0 6px 14px rgba(196,42,42,.08);}
+.quick-item .qi-ico{font-size:26px;}
+.quick-item .qi-name{font-size:13px;color:inherit;}
+.quick-item.highlight{background:linear-gradient(135deg,#fff5f5 0%,#fff 100%);color:#C42A2A;border-color:#fecaca;}
+
+/* ============ 大指标卡 ============ */
+.info-card{background:linear-gradient(135deg,#fff5f5 0%,#fff 100%);}
+.big-metric{text-align:center;padding:20px 0;}
+.big-metric .metric-n{font-size:48px;font-weight:700;color:#C42A2A;line-height:1;letter-spacing:-1px;}
+.big-metric .metric-n .unit{font-size:18px;color:#86909c;margin-left:4px;font-weight:500;}
+.big-metric .metric-l{color:#4e5969;font-size:13px;margin-top:6px;}
+.metric-hint{color:#86909c;font-size:12px;line-height:1.5;padding:12px;background:#fff;border-radius:8px;text-align:center;}
+
+/* ============ 卡片标题右侧 more ============ */
+.card-title{justify-content:space-between;}
+.card-title .card-more{margin-left:auto;font-size:12px;color:#86909c;font-weight:400;text-decoration:none;}
+.card-title .card-more:hover{color:#C42A2A;}
+
+/* ============ 紧凑表格 ============ */
+table.data.compact th,table.data.compact td{padding:8px 10px;font-size:13px;}
+.tag.xs{font-size:10px;padding:1px 6px;}
+.btn.xs{padding:3px 10px;font-size:12px;}
+
+/* ============ 活动列表 ============ */
+.activity-list{display:flex;flex-direction:column;gap:10px;}
+.activity-item{display:flex;gap:12px;padding:10px 2px;align-items:flex-start;}
+.activity-item + .activity-item{border-top:1px dashed #f2f3f5;padding-top:12px;}
+.a-avatar{width:38px;height:38px;border-radius:50%;background:#C42A2A;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0;font-size:14px;}
+.a-avatar.score-gold{background:linear-gradient(135deg,#f59e0b,#d97706);}
+.a-avatar.score-pass{background:linear-gradient(135deg,#22c55e,#16a34a);}
+.a-avatar.score-fail{background:linear-gradient(135deg,#ef4444,#dc2626);}
+.a-body{flex:1;min-width:0;font-size:13px;color:#4e5969;line-height:1.5;}
+.a-body strong{color:#1d2129;}
+.a-body em{color:#C42A2A;font-style:normal;}
+.a-meta{font-size:11px;color:#86909c;margin-top:2px;display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+
+/* ============ 小卡片 ============ */
+.empty-mini{padding:24px 0;text-align:center;color:#86909c;font-size:13px;}
+.empty-mini a{color:#C42A2A;}
+
+/* ============ 系统广播迷你卡 ============ */
+.bcast-mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}
+.bcast-card{padding:12px 14px;background:#fafafa;border-radius:8px;border-left:3px solid #C42A2A;}
+.bcast-card .b-title{font-weight:600;font-size:13px;color:#1d2129;margin-bottom:4px;}
+.bcast-card .b-body{font-size:12px;color:#4e5969;line-height:1.5;margin-bottom:6px;}
+.bcast-card .b-meta{font-size:11px;color:#86909c;}
+
+/* ============ 班级迷你卡 ============ */
+.mini-class-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;}
+.mini-class{display:block;padding:14px 16px;background:#fafafa;border-radius:10px;color:inherit;text-decoration:none;transition:all .2s;border:1.5px solid transparent;}
+.mini-class:hover{background:#fff5f5;border-color:#C42A2A;transform:translateY(-2px);}
+.mini-class .mc-top{display:flex;gap:10px;align-items:center;margin-bottom:6px;}
+.mini-class .mc-badge{width:36px;height:36px;border-radius:10px;background:#C42A2A;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+.mini-class .mc-name{font-weight:600;color:#1d2129;}
+.mini-class .mc-meta{font-size:12px;color:#86909c;}
+</style>
+{% endblock %}

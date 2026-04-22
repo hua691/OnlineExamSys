@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}创建课程{% endblock %}
+{% block page_title %}创建课程{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:640px;margin:0 auto;">
+    <div class="card-title">📘 创建课程</div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-row">
+            <label>所属班级 *</label>{{ form.classroom }}
+            <div style="color:#86909c;font-size:12px;margin-top:4px;">仅显示你已加入或管理的班级</div>
+        </div>
+        <div class="form-row">
+            <label>课程名称 *</label>{{ form.name }}
+        </div>
+        <div class="form-row">
+            <label>课程简介</label>{{ form.description }}
+        </div>
+        <div class="form-row">
+            <label>封面主题色</label>{{ form.cover_color }}
+        </div>
+        <button class="btn" type="submit">创建课程</button>
+        <a href="{% url 'classes:my_classes' %}" class="btn ghost">取消</a>
+    </form>
+</div>
+{% endblock %}

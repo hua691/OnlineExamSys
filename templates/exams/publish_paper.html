@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}发布试卷{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>发布试卷：{{ paper.title }}</h3>
+    <form method="post" style="margin-top: 1rem;">
+        {% csrf_token %}
+        <div style="margin-bottom: 1rem;">
+            <label>{{ form.students.label }}：</label>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
+                {{ form.students }}
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success">确认发布</button>
+        <a href="{% url 'exams:paper_detail' paper.id %}" class="btn" style="background: #eee; color: #333;">取消</a>
+    </form>
+</div>
+{% endblock %}

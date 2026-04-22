@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}成绩详情 - {{ paper.title }}{% endblock %}
+{% block page_title %}成绩详情{% endblock %}
+
+{% block extra_head %}
+<style>
+.result-head {
+    display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; align-items:center;
+    background: linear-gradient(120deg, #1677ff 0%, #69b1ff 100%);
+    color:#fff; padding: 24px; border-radius: var(--radius);
+}
+.result-head .score { font-size: 44px; font-weight: 700; line-height: 1; }
+.result-head .label { opacity: .9; font-size: 13px; margin-bottom: 8px; }
+.q-card { margin-bottom: 12px; }
+.q-head { font-size:14px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.q-head .stem { flex:1; }
+.badge-correct { color: var(--success); font-weight: 600; }
+.badge-wrong { color: var(--danger); font-weight: 600; }
+.ans-box { background:#fafafa; border-radius:6px; padding:10px 14px; margin-top:8px; font-size:13px;}
+.ans-box.std { background:#f6ffed; }
+.ans-box.stu { background:#fff1f0; }
+.ans-box.stu.ok { background:#f6ffed; }
+.explain { background:#fffbe6; border-left: 4px solid var(--warning); padding:10px 14px; border-radius:6px; margin-top:8px; font-size:13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="result-head">
+    <div>
+        <div class="label">试卷</div>
+        <div style="font-size:18px;font-weight:600;">{{ paper.title }}</div>
+        <div style="opacity:.85;font-size:12px;margin-top:4px;">提交时间：{{ record.end_time|date:"Y-m-d H:i"|default:'--' }}</div>
+    </div>
+    <div style="text-align:center;">
+        <div class="label">客观题</div>
+        <div class="score">{{ record.objective_score|default_if_none:'0' }}</div>
+    </div>
+    <div style="text-align:center;">
+        <div class="label">主观题</div>
+        <div class="score">
+            {% if record.status == 'graded' %}{{ record.subjective_score|default_if_none:'0' }}
+            {% else %}<span style="font-size:22px;opacity:.85;">待批</span>{% endif %}
+        </div>
+    </div>
+    <div style="text-align:center;">
+        <div class="label">{% if record.status == 'graded' %}总分{% else %}当前得分{% endif %}</div>
+        <div class="score">{{ record.score|default_if_none:'0' }}</div>
+        <div style="font-size:12px;opacity:.85;margin-top:4px;">
+            {% if record.status == 'graded' %}<span class="tag green">已批阅</span>
+            {% elif record.status == 'finished' %}
+                <span class="tag orange">客观题已出分,主观题待批阅</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div style="height:16px;"></div>
+
+{% for title, type, rows in result_groups %}
+<div class="card">
+    <div class="card-title">{{ title }}</div>
+    {% for a in rows %}
+        <div class="q-card">
+            <div class="q-head">
+                <div class="stem">
+                    <span style="color:var(--brand);">{{ forloop.counter }}.</span>
+                    {{ a.question.content }}
+                </div>
+                <div>
+                    {% if type in 'single_choice multiple_choice judgment' %}
+                        {% if a.is_correct %}
+                            <span class="badge-correct">✓ 正确</span>
+                        {% else %}
+                            <span class="badge-wrong">✗ 错误</span>
+                        {% endif %}
+                        <span class="tag gray">{{ a.score|default_if_none:0 }} / {{ a.question.score }}</span>
+                    {% else %}
+                        {% if a.score is not None %}
+                            <span class="tag {% if a.score >= a.question.score %}green{% elif a.score > 0 %}orange{% else %}red{% endif %}">
+                                {{ a.score|default:0 }} / {{ a.question.score }}
+                            </span>
+                        {% else %}
+                            <span class="tag orange">待批阅</span>
+                        {% endif %}
+                        {% if a.similarity is not None %}
+                            <span class="tag blue">相似度 {{ a.similarity }}</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="ans-box stu {% if a.is_correct %}ok{% endif %}">
+                <strong>你的答案：</strong>{{ a.student_answer|default:'（未作答）'|linebreaksbr }}
+            </div>
+            {% if type != 'short_answer' or not is_student or record.status == 'graded' %}
+                <div class="ans-box std">
+                    <strong>参考答案：</strong>{{ a.question.answer|linebreaksbr }}
+                </div>
+            {% endif %}
+            {% if a.question.explanation %}
+                <div class="explain">💡 解析：{{ a.question.explanation|linebreaksbr }}</div>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+{% endfor %}
+
+<div style="display:flex;gap:10px;">
+    <a href="{% url 'exams:student_record_list' %}" class="btn ghost">← 返回成绩列表</a>
+    {% if not is_student %}
+        <a href="{% url 'exams:grade_record' record.id %}" class="btn">批阅此试卷</a>
+    {% endif %}
+</div>
+{% endblock %}

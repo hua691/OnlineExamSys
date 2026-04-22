@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block title %}消息中心{% endblock %}
+{% block page_title %}{% endblock %}
+
+{% block content %}
+<div class="notif-hero">
+    <div class="hero-left">
+        <div class="hero-icon">🔔</div>
+        <div>
+            <h2>消息中心</h2>
+            <p class="hero-sub">考试提醒 · 成绩通知 · 班级动态 · 系统公告,一站式查看</p>
+        </div>
+    </div>
+    <div class="hero-actions">
+        {% if unread_count %}
+            <a href="{% url 'notifications:read_all' %}" class="btn outline sm">✓ 全部标为已读</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="notif-stats">
+    <div class="stat-pill">
+        <span class="pill-n">{{ total_count }}</span>
+        <span class="pill-l">全部</span>
+    </div>
+    <div class="stat-pill unread">
+        <span class="pill-n">{{ unread_count }}</span>
+        <span class="pill-l">未读</span>
+    </div>
+    <div class="stat-pill">
+        <span class="pill-n">{{ today_count }}</span>
+        <span class="pill-l">今日</span>
+    </div>
+    <div class="stat-pill">
+        <span class="pill-n">{{ week_count }}</span>
+        <span class="pill-l">本周</span>
+    </div>
+</div>
+
+<div class="card">
+    {# 筛选 chips #}
+    <div class="notif-filter">
+        <a href="?" class="chip {% if not filter or filter == 'all' %}active{% endif %}">全部</a>
+        <a href="?filter=unread" class="chip {% if filter == 'unread' %}active{% endif %}">未读</a>
+        <a href="?type=exam_published" class="chip type {% if type_filter == 'exam_published' %}active{% endif %}">📝 试卷发布</a>
+        <a href="?type=exam_submitted" class="chip type {% if type_filter == 'exam_submitted' %}active{% endif %}">📥 学生提交</a>
+        <a href="?type=exam_graded" class="chip type {% if type_filter == 'exam_graded' %}active{% endif %}">🎉 成绩发布</a>
+        <a href="?type=generic" class="chip type {% if type_filter == 'generic' %}active{% endif %}">📢 系统通知</a>
+    </div>
+
+    <div class="notif-list">
+    {% for n in notifications %}
+        <div class="notif-item {% if not n.is_read %}unread{% endif %} type-{{ n.type }}">
+            <div class="notif-icon">
+                {% if n.type == 'exam_published' %}📝
+                {% elif n.type == 'exam_submitted' %}📥
+                {% elif n.type == 'exam_graded' %}🎉
+                {% elif n.type == 'grade_finished' %}✅
+                {% elif n.type == 'class_joined' %}🎓
+                {% else %}�{% endif %}
+            </div>
+            <div class="notif-body">
+                <div class="notif-head">
+                    <strong class="notif-title">{{ n.title }}</strong>
+                    {% if not n.is_read %}<span class="new-dot" title="未读"></span>{% endif %}
+                    <span class="type-tag">{{ n.get_type_display }}</span>
+                </div>
+                {% if n.message %}
+                    <div class="notif-msg">{{ n.message|linebreaksbr }}</div>
+                {% endif %}
+                <div class="notif-meta">
+                    <span>⏱ {{ n.created_at|date:"Y-m-d H:i" }}</span>
+                    {% if n.sender %}
+                        <span>· 来自 <strong>{{ n.sender.first_name|default:n.sender.username }}</strong></span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="notif-action">
+                {% if n.link %}
+                    <a href="{% url 'notifications:read' n.id %}" class="btn sm">进入</a>
+                {% elif not n.is_read %}
+                    <a href="{% url 'notifications:read' n.id %}" class="btn ghost sm">标为已读</a>
+                {% else %}
+                    <span class="done-mark">✓ 已读</span>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="notif-empty">
+            <div class="empty-icon">📪</div>
+            <div class="empty-title">消息中心空空如也</div>
+            <div class="empty-sub">
+                {% if filter == 'unread' %}所有消息都已读,干得漂亮!{% else %}当有新考试、成绩或系统通知时会出现在这里{% endif %}
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.notif-hero{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;background:linear-gradient(135deg,#fff5f5 0%,#fff 70%);border-radius:12px;margin-bottom:16px;border-left:4px solid #C42A2A;}
+.notif-hero .hero-left{display:flex;align-items:center;gap:16px;}
+.notif-hero .hero-icon{width:56px;height:56px;border-radius:16px;background:#C42A2A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 6px 16px rgba(196,42,42,.25);}
+.notif-hero h2{font-size:20px;color:#1d2129;margin:0 0 4px;}
+.notif-hero .hero-sub{color:#86909c;font-size:13px;margin:0;}
+
+.notif-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.stat-pill{background:#fff;padding:16px 20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.04);display:flex;flex-direction:column;gap:4px;border-top:3px solid #e5e5e5;}
+.stat-pill.unread{border-top-color:#C42A2A;background:linear-gradient(135deg,#fff5f5 0%,#fff 100%);}
+.stat-pill .pill-n{font-size:26px;font-weight:700;color:#1d2129;line-height:1;}
+.stat-pill.unread .pill-n{color:#C42A2A;}
+.stat-pill .pill-l{color:#86909c;font-size:12px;}
+
+.notif-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #f2f3f5;}
+.notif-filter .chip{padding:6px 14px;border-radius:16px;background:#f5f5f5;color:#4e5969;font-size:12px;border:1px solid transparent;transition:all .2s;}
+.notif-filter .chip:hover{color:#C42A2A;}
+.notif-filter .chip.active{background:#C42A2A;color:#fff;}
+
+.notif-list{display:flex;flex-direction:column;gap:10px;}
+.notif-item{display:flex;gap:14px;padding:14px 16px;border-radius:10px;background:#fff;border:1px solid #f0f0f0;transition:all .2s;position:relative;}
+.notif-item:hover{border-color:#C42A2A;box-shadow:0 2px 10px rgba(196,42,42,.06);}
+.notif-item.unread{background:#fff9f9;border-left:3px solid #C42A2A;}
+
+.notif-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;background:#f5f5f5;}
+.notif-item.type-exam_published .notif-icon{background:#e6f4ff;}
+.notif-item.type-exam_submitted .notif-icon{background:#fffbe6;}
+.notif-item.type-exam_graded .notif-icon{background:#f6ffed;}
+.notif-item.type-grade_finished .notif-icon{background:#f0fdf4;}
+.notif-item.type-class_joined .notif-icon{background:#fff1f0;}
+.notif-item.type-generic .notif-icon{background:#fff5f5;color:#C42A2A;}
+
+.notif-body{flex:1;min-width:0;}
+.notif-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
+.notif-title{font-size:14px;color:#1d2129;}
+.new-dot{width:8px;height:8px;border-radius:50%;background:#C42A2A;display:inline-block;box-shadow:0 0 0 3px rgba(196,42,42,.15);}
+.type-tag{font-size:11px;color:#86909c;background:#f5f5f5;padding:1px 8px;border-radius:10px;}
+.notif-msg{color:#4e5969;font-size:13px;line-height:1.55;margin-top:4px;}
+.notif-meta{color:#86909c;font-size:12px;margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;}
+
+.notif-action{display:flex;align-items:center;flex-shrink:0;}
+.done-mark{color:#86909c;font-size:12px;background:#fafafa;padding:4px 10px;border-radius:12px;}
+
+.notif-empty{padding:70px 0;text-align:center;}
+.notif-empty .empty-icon{font-size:64px;opacity:.35;margin-bottom:14px;}
+.notif-empty .empty-title{font-size:17px;font-weight:600;color:#4e5969;margin-bottom:6px;}
+.notif-empty .empty-sub{color:#86909c;font-size:13px;}
+
+@media (max-width:700px){
+    .notif-stats{grid-template-columns:repeat(2,1fr);}
+    .notif-hero{flex-direction:column;align-items:flex-start;gap:12px;}
+}
+</style>
+{% endblock %}

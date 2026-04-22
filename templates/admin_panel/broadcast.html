@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}系统通知广播{% endblock %}
+{% block page_title %}{% endblock %}
+
+{% block content %}
+<div class="bcast-hero">
+    <div class="hero-left">
+        <div class="hero-icon">📢</div>
+        <div>
+            <h2>系统通知广播</h2>
+            <p class="hero-sub">向指定人群一键推送系统级消息(考试安排、停机维护、公告等)</p>
+        </div>
+    </div>
+</div>
+
+<div class="bcast-grid">
+    {# ============ 发送表单 ============ #}
+    <form method="post" class="card bcast-form">
+        {% csrf_token %}
+        <div class="section-title"><span class="dot"></span>✍️ 新建通知</div>
+
+        <div class="form-row">
+            <label>标题<span class="req">*</span></label>
+            <input type="text" name="title" class="form-control" required autofocus
+                   maxlength="120" placeholder="一句话概括,如「4 月 25 日系统升级通知」">
+        </div>
+
+        <div class="form-row">
+            <label>内容<span class="req">*</span></label>
+            <textarea name="content" class="form-control" rows="6" required
+                      placeholder="详细说明通知内容,会在用户的消息中心展示"></textarea>
+        </div>
+
+        <div class="form-row">
+            <label>跳转链接(可选)</label>
+            <input type="text" name="link" class="form-control"
+                   placeholder="如 /classes/course/1/  用户点通知后会跳到此页">
+            <div class="hint">留空则只显示通知内容,不带跳转。</div>
+        </div>
+
+        <div class="form-row">
+            <label>接收对象<span class="req">*</span></label>
+            <div class="audience-picker">
+                <label class="aud-card selected">
+                    <input type="radio" name="audience" value="all" checked>
+                    <div class="aud-emoji">🌐</div>
+                    <div class="aud-name">所有用户</div>
+                    <div class="aud-count">{{ stats.all }} 人</div>
+                </label>
+                <label class="aud-card">
+                    <input type="radio" name="audience" value="students">
+                    <div class="aud-emoji">🎓</div>
+                    <div class="aud-name">所有学生</div>
+                    <div class="aud-count">{{ stats.students }} 人</div>
+                </label>
+                <label class="aud-card">
+                    <input type="radio" name="audience" value="teachers">
+                    <div class="aud-emoji">👨‍🏫</div>
+                    <div class="aud-name">所有教师</div>
+                    <div class="aud-count">{{ stats.teachers }} 人</div>
+                </label>
+                <label class="aud-card has-select">
+                    <input type="radio" name="audience" id="aud-class" value="class:0">
+                    <div class="aud-emoji">🏫</div>
+                    <div class="aud-name">指定班级</div>
+                    <select id="class-select" class="form-control" onchange="onClassChange(this)">
+                        <option value="">选择班级…</option>
+                        {% for c in classes %}
+                            <option value="{{ c.id }}">
+                                {{ c.name }}
+                                {% if c.head_teacher %}· {{ c.head_teacher.first_name|default:c.head_teacher.username }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn lg">📤 发送通知</button>
+            <button type="reset" class="btn ghost lg">清空</button>
+        </div>
+    </form>
+
+    {# ============ 最近发送记录(按标题去重) ============ #}
+    <div class="card recent-card">
+        <div class="section-title"><span class="dot"></span>🕒 最近广播</div>
+        {% if recent %}
+            <div class="recent-list">
+            {% regroup recent by title as grouped %}
+            {% for g in grouped %}
+                {% with first=g.list.0 %}
+                <div class="recent-item">
+                    <div class="recent-title">{{ first.title }}</div>
+                    <div class="recent-meta">
+                        <span>📅 {{ first.created_at|date:"m-d H:i" }}</span>
+                        <span>📨 {{ g.list|length }} 人</span>
+                    </div>
+                    <div class="recent-body">{{ first.message|truncatechars:60 }}</div>
+                </div>
+                {% endwith %}
+            {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty">还没发过通知</div>
+        {% endif %}
+
+        <div class="tips">
+            <div class="tips-title">💡 使用小贴士</div>
+            <ul>
+                <li>通知标题显示在用户消息中心顶部,要<strong>简洁</strong></li>
+                <li>正文支持换行,用户点击后标记为已读</li>
+                <li>跳转链接填相对路径,如 <code>/exams/student/todo/</code></li>
+                <li>自动排除发件人自己(不会给自己推送)</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+// 角色 / 受众卡片联动
+document.querySelectorAll('.audience-picker .aud-card').forEach(card => {
+    card.addEventListener('click', function(e){
+        if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
+        document.querySelectorAll('.audience-picker .aud-card').forEach(c => c.classList.remove('selected'));
+        this.classList.add('selected');
+        const r = this.querySelector('input[type=radio]');
+        if (r) r.checked = true;
+    });
+});
+
+// 班级下拉变化时同步 audience value + 自动勾选该卡
+function onClassChange(sel) {
+    const input = document.getElementById('aud-class');
+    if (sel.value) {
+        input.value = 'class:' + sel.value;
+        input.checked = true;
+        document.querySelectorAll('.audience-picker .aud-card').forEach(c => c.classList.remove('selected'));
+        input.closest('.aud-card').classList.add('selected');
+    }
+}
+</script>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.bcast-hero{display:flex;align-items:center;padding:20px 24px;background:linear-gradient(135deg,#fff5f5 0%,#fff 70%);border-radius:12px;margin-bottom:16px;border-left:4px solid #C42A2A;}
+.bcast-hero .hero-left{display:flex;align-items:center;gap:16px;}
+.bcast-hero .hero-icon{width:56px;height:56px;border-radius:16px;background:#C42A2A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 6px 16px rgba(196,42,42,.25);}
+.bcast-hero h2{font-size:20px;color:#1d2129;margin:0 0 4px;}
+.bcast-hero .hero-sub{color:#86909c;font-size:13px;margin:0;}
+
+.bcast-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;}
+.bcast-form{padding:24px 28px;}
+
+.section-title{font-size:15px;font-weight:600;color:#1d2129;margin-bottom:18px;display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid #f2f3f5;}
+.section-title .dot{width:4px;height:16px;background:#C42A2A;border-radius:2px;}
+
+.bcast-form .form-row{margin-bottom:18px;}
+.bcast-form label{display:block;font-size:13px;color:#4e5969;margin-bottom:8px;font-weight:500;}
+.bcast-form .req{color:#C42A2A;margin-left:2px;}
+.bcast-form .hint{font-size:12px;color:#86909c;margin-top:6px;}
+.bcast-form .form-control{width:100%;padding:10px 14px;border:1px solid #e5e5e5;border-radius:8px;font-size:14px;background:#fafafa;font-family:inherit;}
+.bcast-form .form-control:focus{outline:none;border-color:#C42A2A;background:#fff;box-shadow:0 0 0 3px rgba(196,42,42,.08);}
+
+.audience-picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;}
+.aud-card{cursor:pointer;padding:14px 14px 12px;border:2px solid #eee;border-radius:10px;background:#fff;transition:all .2s;position:relative;display:flex;flex-direction:column;gap:4px;}
+.aud-card:hover{border-color:#C42A2A;transform:translateY(-1px);}
+.aud-card.selected{border-color:#C42A2A;background:#fff5f5;box-shadow:0 4px 10px rgba(196,42,42,.1);}
+.aud-card.selected::after{content:"✓";position:absolute;top:8px;right:10px;width:20px;height:20px;border-radius:50%;background:#C42A2A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+.aud-card input[type=radio]{position:absolute;opacity:0;pointer-events:none;}
+.aud-card .aud-emoji{font-size:22px;}
+.aud-card .aud-name{font-size:14px;font-weight:600;color:#1d2129;}
+.aud-card .aud-count{font-size:12px;color:#C42A2A;font-weight:500;}
+.aud-card.has-select select{margin-top:6px;padding:5px 8px;font-size:12px;width:100%;border:1px solid #e5e5e5;border-radius:4px;background:#fff;}
+
+.form-actions{display:flex;gap:12px;margin-top:20px;padding-top:20px;border-top:1px solid #f2f3f5;}
+.form-actions .btn.lg{padding:11px 28px;font-size:14px;}
+
+.recent-card{padding:22px 24px;}
+.recent-list{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
+.recent-item{padding:10px 12px;background:#fafafa;border-radius:8px;border-left:3px solid #C42A2A;}
+.recent-title{font-weight:600;font-size:13px;color:#1d2129;margin-bottom:4px;}
+.recent-meta{font-size:11px;color:#86909c;display:flex;gap:10px;margin-bottom:4px;}
+.recent-body{font-size:12px;color:#4e5969;line-height:1.4;}
+
+.tips{padding:14px 16px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;margin-top:10px;}
+.tips-title{font-size:13px;font-weight:600;color:#92400e;margin-bottom:8px;}
+.tips ul{margin:0;padding-left:18px;font-size:12px;color:#78350f;line-height:1.7;}
+.tips code{background:#fef3c7;padding:0 4px;border-radius:3px;font-size:11px;}
+
+@media (max-width:1000px){
+    .bcast-grid{grid-template-columns:1fr;}
+}
+</style>
+{% endblock %}

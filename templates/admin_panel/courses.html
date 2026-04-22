@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}课程管理{% endblock %}
+{% block page_title %}课程管理 · 共 {{ total }} 门课程{% endblock %}
+
+{% block content %}
+{% include 'admin_panel/_subnav.html' %}
+
+<div class="card">
+    <form method="get" class="admin-filter">
+        <input type="text" name="q" value="{{ q }}" placeholder="🔍 课程名 / 授课教师 / 班级名">
+        <button type="submit" class="btn sm">搜索</button>
+        {% if q %}<a href="{% url 'users:manage_courses' %}" class="btn ghost sm">清空</a>{% endif %}
+    </form>
+
+    <table class="data">
+        <thead>
+            <tr>
+                <th>ID</th><th>课程名</th><th>所属班级</th>
+                <th>授课教师</th><th>描述</th><th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in courses %}
+            <tr>
+                <td>{{ c.id }}</td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="color-dot" style="background:{{ c.cover_color|default:'#C42A2A' }};"></span>
+                        <a href="{% url 'classes:course_detail' c.id %}" style="color:#C42A2A;font-weight:500;">{{ c.name }}</a>
+                    </div>
+                </td>
+                <td>{{ c.classroom.name }}</td>
+                <td>{{ c.teacher.first_name|default:c.teacher.username }}</td>
+                <td style="color:#86909c;max-width:320px;">{{ c.description|default:'—'|truncatechars:60 }}</td>
+                <td>
+                    <div class="row-actions">
+                        <a href="{% url 'classes:course_detail' c.id %}" class="btn ghost xs">进入</a>
+                        <form method="post" action="{% url 'users:delete_course' c.id %}"
+                              onsubmit="return confirm('确定删除课程「{{ c.name }}」?')">
+                            {% csrf_token %}
+                            <button type="submit" class="btn danger xs">删除</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6" class="empty">没有匹配的课程</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.color-dot{width:14px;height:14px;border-radius:50%;display:inline-block;box-shadow:0 0 0 2px #fff, 0 0 0 3px #eee;}
+</style>
+{% endblock %}

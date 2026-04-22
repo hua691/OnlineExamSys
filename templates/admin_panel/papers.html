@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}试卷审核{% endblock %}
+{% block page_title %}试卷审核{% endblock %}
+
+{% block content %}
+{% include 'admin_panel/_subnav.html' %}
+
+<div class="card">
+    <form method="get" class="admin-filter">
+        <input type="text" name="q" value="{{ q }}" placeholder="🔍 试卷标题 / 创建者">
+        <div class="chips">
+            <a href="?" class="chip {% if not status %}active{% endif %}">
+                全部<span class="count-badge">{{ counts.all }}</span>
+            </a>
+            <a href="?status=published" class="chip {% if status == 'published' %}active{% endif %}">
+                已发布<span class="count-badge">{{ counts.published }}</span>
+            </a>
+            <a href="?status=draft" class="chip {% if status == 'draft' %}active{% endif %}">
+                草稿<span class="count-badge">{{ counts.draft }}</span>
+            </a>
+        </div>
+        <button type="submit" class="btn sm">搜索</button>
+    </form>
+
+    <table class="data">
+        <thead>
+            <tr>
+                <th>ID</th><th>试卷标题</th><th>所属课程</th><th>创建者</th>
+                <th>时长</th><th>题数</th><th>提交数</th>
+                <th>截止时间</th><th>状态</th><th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in papers %}
+            <tr>
+                <td>{{ p.id }}</td>
+                <td><strong>{{ p.title }}</strong></td>
+                <td>{{ p.course.name|default:'— 公共 —' }}</td>
+                <td>{{ p.created_by.first_name|default:p.created_by.username }}</td>
+                <td>{{ p.duration }} 分钟</td>
+                <td>{{ p.questions.count }}</td>
+                <td>{{ p.submission_count }}</td>
+                <td style="color:#86909c;font-size:12px;">
+                    {% if p.deadline %}{{ p.deadline|date:"Y-m-d H:i" }}{% else %}—{% endif %}
+                </td>
+                <td>
+                    {% if p.is_published %}<span class="tag green">已发布</span>
+                    {% else %}<span class="tag gray">草稿</span>{% endif %}
+                </td>
+                <td>
+                    <div class="row-actions">
+                        <form method="post" action="{% url 'users:toggle_paper_publish' p.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn xs {% if p.is_published %}ghost{% else %}success{% endif %}">
+                                {% if p.is_published %}撤回{% else %}发布{% endif %}
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'users:delete_paper' p.id %}"
+                              onsubmit="return confirm('确定删除「{{ p.title }}」?答题记录也会删除!')">
+                            {% csrf_token %}
+                            <button type="submit" class="btn danger xs">删除</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="10" class="empty">没有匹配的试卷</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

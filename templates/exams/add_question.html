@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}添加试题{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>添加新试题</h3>
+    <form method="post" style="margin-top: 1rem;">
+        {% csrf_token %}
+        {% for field in form %}
+        <div style="margin-bottom: 1rem;">
+            <label>{{ field.label }}：</label>
+            {{ field }}
+            {% if field.errors %}
+                <div style="color: red; font-size: 0.9rem;">{{ field.errors.0 }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-success">保存</button>
+        <a href="{% url 'exams:question_list' %}" class="btn" style="background: #eee; color: #333;">取消</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}创建试卷{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>创建新试卷</h3>
+    <form method="post" style="margin-top: 1rem;">
+        {% csrf_token %}
+        <!-- 试卷基本信息 -->
+        {% for field in form %}
+        <div style="margin-bottom: 1rem;">
+            <label>{{ field.label }}：</label>
+            {{ field }}
+            {% if field.errors %}
+                <div style="color: red; font-size: 0.9rem;">{{ field.errors.0 }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        <!-- 选择试题 -->
+        <div style="margin: 1.5rem 0;">
+            <h4>选择试题：</h4>
+            {% if questions %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+                {% for question in questions %}
+                <div style="border: 1px solid #eee; padding: 0.8rem; border-radius: 4px;">
+                    <input type="checkbox" name="questions" value="{{ question.id }}" id="q{{ question.id }}">
+                    <label for="q{{ question.id }}">
+                        {{ question.get_type_display }} · {{ question.content|truncatechars:30 }} ({{ question.score }}分)
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: #999;">暂无可用试题，请先<a href="{% url 'exams:add_question' %}">添加试题</a></p>
+            {% endif %}
+        </div>
+        
+        <button type="submit" class="btn btn-success">保存</button>
+        <a href="{% url 'exams:paper_list' %}" class="btn" style="background: #eee; color: #333;">取消</a>
+    </form>
+</div>
+{% endblock %}

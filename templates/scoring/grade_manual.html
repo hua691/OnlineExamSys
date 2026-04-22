@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}主观题批阅{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>主观题批阅（客观题得分：{{ auto_score }} 分）</h3>
+    <p>试卷：{{ record.paper.title }} | 学生：{{ record.student.username }}</p>
+    
+    <form method="post" action="{% url 'scoring:submit_manual_grade' record.id %}" style="margin-top: 2rem;">
+        {% csrf_token %}
+        {% for item in manual_questions %}
+        <div style="margin-bottom: 2rem; padding: 1rem; border: 1px solid #eee; border-radius: 4px;">
+            <h4>
+                {{ forloop.counter }}. {{ item.question.get_type_display }} (满分：{{ item.max_score }}分)
+            </h4>
+            <p style="margin: 0.5rem 0;"><strong>题目：</strong>{{ item.question.content }}</p>
+            <p style="margin: 0.5rem 0;"><strong>标准答案：</strong>{{ item.question.answer }}</p>
+            <p style="margin: 0.5rem 0;"><strong>学生答案：</strong>{{ item.student_ans }}</p>
+            <p style="margin: 0.5rem 0;">
+                <strong>语义相似度：</strong> 
+                <span style="color: {% if item.similarity > 0.8 %}green{% elif item.similarity > 0.5 %}orange{% else %}red{% endif %};">
+                    {{ item.similarity }} ({{ item.similarity|floatformat:2|mul:100 }}%)
+                </span>
+            </p>
+            <div style="margin-top: 1rem;">
+                <label>给分：</label>
+                <input type="number" name="q_{{ item.question.id }}" 
+                       min="0" max="{{ item.max_score }}" step="0.5" 
+                       value="{{ item.similarity|mul:item.max_score|floatformat:1 }}"
+                       style="padding: 0.5rem; width: 100px;">
+                <span style="color: #666;">/ {{ item.max_score }} 分</span>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <button type="submit" class="btn btn-success">提交最终成绩</button>
+        <a href="{% url 'exams:paper_detail' record.paper.id %}" class="btn" style="background: #eee; color: #333;">取消</a>
+    </form>
+</div>
+
+<script>
+// 扩展模板过滤器（乘法）
+document.addEventListener('DOMContentLoaded', function() {
+    // 自动计算相似度对应的分数并填充
+    const inputs = document.querySelectorAll('input[type="number"]');
+    inputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // 限制最大值和最小值
+            if (parseFloat(this.value) > parseFloat(this.max)) this.value = this.max;
+            if (parseFloat(this.value) < 0) this.value = 0;
+        });
+    });
+});
+</script>
+{% endblock %}

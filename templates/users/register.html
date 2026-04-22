@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}注册 · 长江云阅卷{% endblock %}
+{% block plain_content %}
+<style>
+.hero-bg {
+    position: fixed; inset: 0; z-index: -1;
+    background: #2f3a40 url("{% static 'images/login-bg.jpg' %}") center center / cover no-repeat;
+}
+.hero-bg::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(135deg,
+        rgba(255,255,255,.18) 0%,
+        rgba(0,0,0,.05) 40%,
+        rgba(0,0,0,.35) 100%);
+}
+
+.reg-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 30px 20px; }
+.reg-card {
+    background: rgba(255,255,255,.95);
+    backdrop-filter: blur(12px);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.15);
+    width: 100%; max-width: 560px;
+    padding: 40px;
+}
+.brand-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 6px; justify-content: center;
+}
+.brand-row .logo {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #C42A2A; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(196,42,42,.35);
+}
+.reg-card h2 { text-align: center; color: #333; font-size: 22px; margin-bottom: 6px; }
+.reg-card .sub { text-align: center; color: #999; font-size: 13px; margin-bottom: 24px; }
+.reg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-row { margin-bottom: 14px; }
+.form-row label { display: block; font-size: 12px; color: #666; margin-bottom: 6px; }
+.form-row .req { color: #C42A2A; }
+
+.form-control, input, select {
+    width: 100%; padding: 11px 14px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    font-size: 14px; background: #fafafa;
+    box-sizing: border-box;
+    font-family: inherit;
+    transition: all .2s;
+}
+.form-control:focus, input:focus, select:focus {
+    outline: none; background: #fff;
+    border-color: #C42A2A;
+    box-shadow: 0 0 0 3px rgba(196,42,42,.1);
+}
+.btn-block {
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, #D23A3A 0%, #A51E1E 100%);
+    color: #fff; border: none;
+    border-radius: 8px;
+    font-size: 15px; font-weight: 600; letter-spacing: 2px; cursor: pointer;
+    margin-top: 6px;
+    box-shadow: 0 4px 12px rgba(196,42,42,.3);
+    transition: all .2s;
+}
+.btn-block:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(196,42,42,.4); }
+.foot { margin-top: 16px; text-align: center; color: #999; font-size: 13px; }
+.foot a { color: #C42A2A; }
+.error-text { color: #C42A2A; font-size: 12px; margin-top: 4px; }
+
+@media (max-width: 520px) { .reg-grid { grid-template-columns: 1fr; } }
+</style>
+<div class="hero-bg"></div>
+
+<div class="reg-wrap">
+    <div class="reg-card">
+        <div class="brand-row">
+            <div class="logo">雨</div>
+            <span style="font-size:18px;font-weight:600;color:#333;letter-spacing:1px;">长江<span style="color:#C42A2A;">·</span>云阅卷</span>
+        </div>
+        <h2>注册账号</h2>
+        <p class="sub">加入云阅卷,开启智能考试之旅</p>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="reg-grid">
+                <div class="form-row">
+                    <label>用户名 <span class="req">*</span></label>
+                    {{ form.username }}
+                    {% if form.username.errors %}<div class="error-text">{{ form.username.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-row">
+                    <label>真实姓名</label>
+                    {{ form.real_name }}
+                </div>
+            </div>
+            <div class="reg-grid">
+                <div class="form-row">
+                    <label>密码 <span class="req">*</span></label>
+                    {{ form.password1 }}
+                    {% if form.password1.errors %}<div class="error-text">{{ form.password1.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-row">
+                    <label>确认密码 <span class="req">*</span></label>
+                    {{ form.password2 }}
+                    {% if form.password2.errors %}<div class="error-text">{{ form.password2.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="reg-grid">
+                <div class="form-row">
+                    <label>注册身份 <span class="req">*</span></label>
+                    {{ form.role }}
+                </div>
+                <div class="form-row">
+                    <label>学号 / 工号</label>
+                    {{ form.student_id }}
+                </div>
+            </div>
+            <div class="form-row">
+                <label>邮箱（选填）</label>
+                {{ form.email }}
+            </div>
+            <button type="submit" class="btn-block">立即注册</button>
+        </form>
+        <div class="foot">
+            已有账号？<a href="{% url 'users:login' %}">直接登录</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% block title %}{{ course.name }}{% endblock %}
+{% block page_title %}{{ course.name }}{% endblock %}
+
+{% block content %}
+{# ============ 课程头部横幅 ============ #}
+<div class="card course-hero" style="background:linear-gradient(135deg,{{ course.cover_color|default:'#C42A2A' }},#e06666);color:#fff;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+            <h2 style="color:#fff;margin-bottom:4px;">📘 {{ course.name }}</h2>
+            <div style="opacity:.9;">班级：{{ course.classroom.name }} · 授课教师：{{ course.teacher.first_name|default:course.teacher.username }}</div>
+            {% if course.description %}<div style="margin-top:8px;opacity:.9;">{{ course.description }}</div>{% endif %}
+        </div>
+        <div style="font-size:60px;opacity:.3;">📚</div>
+    </div>
+</div>
+
+{# ============ Tab 导航 ============ #}
+<div class="course-tabs">
+    <a href="?tab=papers" class="tab {% if tab == 'papers' %}active{% endif %}">
+        📄 课程试卷 <span class="tab-badge">{{ papers|length }}</span>
+    </a>
+    <a href="?tab=announcements" class="tab {% if tab == 'announcements' %}active{% endif %}">
+        📢 课程公告 <span class="tab-badge">{{ announcements|length }}</span>
+    </a>
+    <a href="?tab=discussions" class="tab {% if tab == 'discussions' %}active{% endif %}">
+        💬 讨论区 <span class="tab-badge">{{ topics|length }}</span>
+    </a>
+    <a href="?tab=scores" class="tab {% if tab == 'scores' %}active{% endif %}">
+        📊 成绩单
+    </a>
+</div>
+
+{# ============ Tab: 课程试卷 ============ #}
+{% if tab == 'papers' %}
+<div class="card">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        📄 课程试卷
+        {% if is_course_teacher %}
+            <a href="{% url 'exams:paper_create' %}" class="btn sm">+ 新建试卷</a>
+        {% endif %}
+    </div>
+    {% if papers %}
+        <table class="data">
+            <thead><tr>
+                <th>试卷</th><th>时长</th><th>题数</th><th>截止时间</th><th>状态</th>
+                {% if role == 'student' %}<th>我的情况</th>{% endif %}
+                <th>操作</th>
+            </tr></thead>
+            <tbody>
+                {% for p in papers %}
+                <tr>
+                    <td><strong>{{ p.title }}</strong>
+                        <div style="font-size:12px;color:#86909c;">{{ p.description|default:''|truncatechars:50 }}</div></td>
+                    <td>{{ p.duration }} 分钟</td>
+                    <td>{{ p.questions.count }}</td>
+                    <td>{% if p.deadline %}{{ p.deadline|date:"Y-m-d H:i" }}{% else %}—{% endif %}</td>
+                    <td>{% if p.is_published %}<span class="tag green">已发布</span>{% else %}<span class="tag gray">草稿</span>{% endif %}</td>
+                    {% if role == 'student' %}
+                        <td>
+                            {% for rid, rec in my_records.items %}{% if rid == p.id %}{% if rec.status == 'graded' %}<span class="tag green">{{ rec.score }}分</span>{% elif rec.status == 'finished' %}<span class="tag orange">待批阅</span>{% else %}<span class="tag gray">未完成</span>{% endif %}{% endif %}{% endfor %}
+                        </td>
+                    {% endif %}
+                    <td>
+                        {% if role == 'student' and p.is_published %}
+                            <a href="{% url 'exams:exam_paper_detail' p.id %}" class="btn sm">进入</a>
+                        {% elif is_course_teacher %}
+                            <a href="{% url 'exams:paper_edit' p.id %}" class="btn ghost sm">编辑</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            {% if is_course_teacher %}
+                还没有试卷。<a href="{% url 'exams:paper_create' %}">创建试卷</a>并选择本课程进行发布。
+            {% else %}
+                老师还没在本课程发布试卷
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ============ Tab: 课程公告 ============ #}
+{% if tab == 'announcements' %}
+<div class="card">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        📢 课程公告
+        {% if is_course_teacher %}
+            <a href="{% url 'classes:announcement_create' course.id %}" class="btn sm">+ 发布公告</a>
+        {% endif %}
+    </div>
+    {% if announcements %}
+        <div class="ann-list">
+        {% for a in announcements %}
+            <div class="ann-item{% if a.is_pinned %} pinned{% endif %}">
+                <div class="ann-head">
+                    {% if a.is_pinned %}<span class="tag red">置顶</span>{% endif %}
+                    <span class="ann-title">{{ a.title }}</span>
+                    <span class="ann-meta">
+                        由 {{ a.author.first_name|default:a.author.username }}
+                        发布于 {{ a.created_at|date:"Y-m-d H:i" }}
+                    </span>
+                </div>
+                <div class="ann-body">{{ a.content|linebreaksbr }}</div>
+                {% if is_course_teacher or a.author_id == user.id %}
+                    <div class="ann-actions">
+                        <a href="{% url 'classes:announcement_delete' course.id a.id %}"
+                           onclick="return confirm('确定删除该公告吗？');" class="btn ghost sm">删除</a>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty">
+            {% if is_course_teacher %}暂无公告，点击右上角"发布公告"{% else %}老师还未发布课程公告{% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ============ Tab: 讨论区 ============ #}
+{% if tab == 'discussions' %}
+<div class="card">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        💬 课程讨论区
+        <a href="{% url 'classes:topic_create' course.id %}" class="btn sm">+ 发起讨论</a>
+    </div>
+    {% if topics %}
+        <table class="data">
+            <thead><tr>
+                <th style="width:55%;">主题</th>
+                <th>发帖人</th>
+                <th>回复数</th>
+                <th>最新</th>
+            </tr></thead>
+            <tbody>
+            {% for t in topics %}
+                <tr>
+                    <td>
+                        <a href="{% url 'classes:topic_detail' course.id t.id %}" style="font-weight:500;">{{ t.title }}</a>
+                        <div style="font-size:12px;color:#86909c;">{{ t.content|truncatechars:60 }}</div>
+                    </td>
+                    <td>
+                        {% if t.author.profile.role == 'teacher' %}<span class="tag red">教师</span>{% endif %}
+                        {{ t.author.first_name|default:t.author.username }}
+                    </td>
+                    <td>{{ t.reply_cnt }}</td>
+                    <td>{{ t.created_at|date:"m-d H:i" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">还没有讨论，来做第一个发帖人吧！</div>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ============ Tab: 成绩单 ============ #}
+{% if tab == 'scores' %}
+<div class="card">
+    <div class="card-title">📊 成绩单</div>
+    {% if score_rows %}
+        <table class="data">
+            <thead><tr>
+                {% if role != 'student' %}<th>学生</th>{% endif %}
+                <th>试卷</th>
+                <th>提交时间</th>
+                <th>状态</th>
+                <th>分数</th>
+                <th>操作</th>
+            </tr></thead>
+            <tbody>
+            {% for r in score_rows %}
+                <tr>
+                    {% if role != 'student' %}
+                    <td>{{ r.student.first_name|default:r.student.username }}</td>
+                    {% endif %}
+                    <td>{{ r.paper.title }}</td>
+                    <td>{% if r.record.end_time %}{{ r.record.end_time|date:"Y-m-d H:i" }}{% else %}—{% endif %}</td>
+                    <td>
+                        {% if r.record.status == 'graded' %}<span class="tag green">已批阅</span>
+                        {% elif r.record.status == 'finished' %}<span class="tag orange">待批阅</span>
+                        {% else %}<span class="tag gray">未完成</span>{% endif %}
+                    </td>
+                    <td><strong>{{ r.record.score|default:'—' }}</strong></td>
+                    <td>
+                        {% if r.record.status != 'unfinished' %}
+                            <a href="{% url 'exams:exam_result' r.record.id %}" class="btn ghost sm">详情</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">暂无提交记录</div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.course-hero{border-radius:12px;padding:24px;margin-bottom:16px;}
+.course-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid #eee;overflow-x:auto;}
+.course-tabs .tab{padding:12px 20px;color:#4e5969;text-decoration:none;border-bottom:3px solid transparent;font-weight:500;transition:all .2s;white-space:nowrap;}
+.course-tabs .tab:hover{color:#C42A2A;}
+.course-tabs .tab.active{color:#C42A2A;border-bottom-color:#C42A2A;}
+.tab-badge{display:inline-block;background:#f2f3f5;color:#4e5969;font-size:12px;padding:1px 8px;border-radius:10px;margin-left:4px;}
+.course-tabs .tab.active .tab-badge{background:#C42A2A;color:#fff;}
+
+.ann-list{display:flex;flex-direction:column;gap:12px;}
+.ann-item{padding:16px;border:1px solid #eee;border-radius:8px;transition:all .2s;}
+.ann-item:hover{border-color:#C42A2A;}
+.ann-item.pinned{background:#fff8f8;border-color:#ffdcdc;}
+.ann-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+.ann-title{font-size:16px;font-weight:600;color:#1d2129;}
+.ann-meta{font-size:12px;color:#86909c;margin-left:auto;}
+.ann-body{color:#4e5969;line-height:1.7;}
+.ann-actions{margin-top:10px;text-align:right;}
+
+.tag.red{background:#ffeaea;color:#C42A2A;}
+</style>
+{% endblock %}

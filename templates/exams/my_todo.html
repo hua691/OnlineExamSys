@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}我的待办{% endblock %}
+{% block page_title %}我的待办 ({{ todo_count }}){% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">📝 待办任务 · 按紧急程度排序</div>
+    {% if todo_rows %}
+        <div class="todo-list">
+        {% for row in todo_rows %}
+            <div class="todo-item urgency-{{ row.urgency }}">
+                <div class="urgency-marker"></div>
+                <div class="todo-main">
+                    <div class="todo-title">
+                        {% if row.urgency == 'overdue' %}⛔️{% elif row.urgency == 'urgent' %}🔥{% elif row.urgency == 'soon' %}⏰{% else %}📘{% endif %}
+                        {{ row.paper.title }}
+                    </div>
+                    <div class="todo-meta">
+                        {% if row.paper.course %}
+                            <span>📚 {{ row.paper.course.name }}</span> ·
+                        {% endif %}
+                        <span>⏱ 限时 {{ row.paper.duration }} 分钟</span> ·
+                        <span>📋 {{ row.paper.questions.count }} 题</span>
+                        {% if row.paper.deadline %}
+                            · <span>截止 {{ row.paper.deadline|date:"Y-m-d H:i" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="todo-right">
+                    <div class="hint hint-{{ row.urgency }}">{{ row.hint }}</div>
+                    {% if row.urgency != 'overdue' %}
+                        <a href="{% url 'exams:exam_paper_detail' row.paper.id %}" class="btn sm">进入答题</a>
+                    {% else %}
+                        <span class="btn ghost sm disabled">已截止</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty">🎉 当前没有待办任务,去 <a href="{% url 'classes:my_classes' %}">我听的课</a> 看看吧</div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.todo-list{display:flex;flex-direction:column;gap:12px;}
+.todo-item{display:flex;align-items:center;padding:16px 20px;border:1px solid #eee;border-radius:10px;gap:14px;position:relative;transition:all .2s;}
+.todo-item:hover{box-shadow:0 2px 8px rgba(196,42,42,.08);border-color:#C42A2A;}
+.urgency-marker{width:6px;height:44px;border-radius:3px;flex-shrink:0;}
+.urgency-overdue .urgency-marker{background:#999;}
+.urgency-urgent .urgency-marker{background:#e15c5c;}
+.urgency-soon .urgency-marker{background:#f0a030;}
+.urgency-normal .urgency-marker{background:#52c41a;}
+.todo-main{flex:1;}
+.todo-title{font-size:16px;font-weight:600;color:#1d2129;margin-bottom:4px;}
+.todo-meta{font-size:12px;color:#86909c;display:flex;gap:4px;flex-wrap:wrap;}
+.todo-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+.hint{font-size:13px;font-weight:600;}
+.hint-overdue{color:#999;}
+.hint-urgent{color:#e15c5c;}
+.hint-soon{color:#f0a030;}
+.hint-normal{color:#52c41a;}
+.btn.disabled{opacity:.5;cursor:not-allowed;pointer-events:none;}
+</style>
+{% endblock %}

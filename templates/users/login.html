@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}登录 · 长江云阅卷{% endblock %}
+{% block plain_content %}
+<style>
+/* 长江风景真实背景图 */
+.hero-bg {
+    position: fixed; inset: 0; z-index: -1;
+    background: #2f3a40 url("{% static 'images/login-bg.jpg' %}") center center / cover no-repeat;
+}
+.hero-bg::before {
+    /* 柔和遮罩：顶部稍亮、底部加深，使登录卡片更清晰 */
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg,
+        rgba(255,255,255,.18) 0%,
+        rgba(0,0,0,.05) 40%,
+        rgba(0,0,0,.35) 100%);
+}
+
+.auth-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    position: relative;
+}
+
+.site-foot {
+    position: absolute;
+    bottom: 14px; left: 0; right: 0;
+    text-align: center;
+    color: rgba(255,255,255,.75);
+    font-size: 12px;
+    text-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
+
+.brand-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px; justify-content: center;
+}
+.brand-row .logo {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #C42A2A; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 18px;
+    box-shadow: 0 4px 12px rgba(196,42,42,.35);
+}
+.brand-row .title {
+    font-size: 22px; font-weight: 600; color: #333;
+    letter-spacing: 1px;
+}
+.brand-row .title em { color: #C42A2A; font-style: normal; }
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(12px);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.15);
+    padding: 40px 40px 30px;
+}
+.auth-card .welcome {
+    font-size: 20px; color: #333; text-align: center;
+    margin-bottom: 4px;
+}
+.auth-card .welcome em {
+    font-style: normal; color: #C42A2A;
+    position: relative;
+}
+.auth-card .welcome em::before,
+.auth-card .welcome em::after {
+    color: #C42A2A; font-style: normal;
+    font-size: 22px; font-weight: 600;
+}
+.auth-card .welcome em::before { content: '「'; }
+.auth-card .welcome em::after { content: '」'; }
+
+.auth-card .sub {
+    color: #999; font-size: 13px; text-align: center;
+    margin-bottom: 28px;
+}
+
+.role-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 24px;
+}
+.role-tabs label {
+    position: relative;
+    text-align: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #666;
+    border-radius: 6px;
+    padding: 9px 0;
+    transition: all .2s;
+    user-select: none;
+}
+.role-tabs input[type=radio] { position: absolute; opacity: 0; pointer-events: none; }
+.role-tabs label:has(input:checked) {
+    background: #fff;
+    color: #C42A2A;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,.08);
+}
+/* 兼容不支持 :has 的浏览器 */
+.role-tabs label input:checked ~ span {
+    color: #C42A2A; font-weight: 600;
+}
+
+.form-group { margin-bottom: 16px; }
+.form-group label {
+    display: block; font-size: 12px; color: #999;
+    margin-bottom: 6px;
+}
+.form-group .input-wrap {
+    position: relative;
+}
+.form-group .input-wrap .ico {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: #bbb; font-size: 16px; pointer-events: none;
+}
+.form-group input {
+    width: 100%;
+    padding: 12px 14px 12px 42px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fafafa;
+    transition: all .2s;
+    box-sizing: border-box;
+}
+.form-group input:focus {
+    outline: none; background: #fff;
+    border-color: #C42A2A;
+    box-shadow: 0 0 0 3px rgba(196,42,42,.1);
+}
+
+.btn-login {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, #D23A3A 0%, #A51E1E 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all .2s;
+    margin-top: 8px;
+    box-shadow: 0 4px 12px rgba(196,42,42,.3);
+}
+.btn-login:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(196,42,42,.4);
+}
+
+.foot-links {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 18px; font-size: 13px; color: #999;
+}
+.foot-links a { color: #C42A2A; }
+
+.error-text { color: #C42A2A; font-size: 12px; margin-top: 4px; }
+</style>
+
+<div class="hero-bg"></div>
+
+<div class="auth-wrap">
+    <div class="auth-card">
+        <div class="brand-row">
+            <div class="logo">雨</div>
+            <div class="title">长江<em>·</em>云阅卷</div>
+        </div>
+
+        <div class="welcome">
+            欢迎使用<em>长江·云阅卷</em>
+        </div>
+        <div class="sub">请选择身份后输入账号密码登录</div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% with selected=form.role.value|default:'student' %}
+            <div class="role-tabs">
+                <label>
+                    <input type="radio" name="role" value="student" {% if selected == 'student' %}checked{% endif %}>
+                    <span>🎓 学生</span>
+                </label>
+                <label>
+                    <input type="radio" name="role" value="teacher" {% if selected == 'teacher' %}checked{% endif %}>
+                    <span>👨‍🏫 教师</span>
+                </label>
+                <label>
+                    <input type="radio" name="role" value="admin" {% if selected == 'admin' %}checked{% endif %}>
+                    <span>🛡️ 管理员</span>
+                </label>
+            </div>
+            {% endwith %}
+
+            <div class="form-group">
+                <label>账号</label>
+                <div class="input-wrap">
+                    <span class="ico">👤</span>
+                    <input type="text" name="username" placeholder="请输入用户名"
+                           value="{{ form.username.value|default:'' }}" required>
+                </div>
+                {% if form.username.errors %}<div class="error-text">{{ form.username.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <div class="input-wrap">
+                    <span class="ico">🔒</span>
+                    <input type="password" name="password" placeholder="请输入密码" required>
+                </div>
+                {% if form.password.errors %}<div class="error-text">{{ form.password.errors.0 }}</div>{% endif %}
+            </div>
+
+            <button type="submit" class="btn-login">登 录</button>
+        </form>
+
+        <div class="foot-links">
+            <span>没有账号？<a href="{% url 'users:register' %}">立即注册</a></span>
+            <span style="color:#cfcfcf;font-size:11px;letter-spacing:.3px;">演示账号 admin / admin123</span>
+        </div>
+    </div>
+
+    <div class="site-foot">
+        ©2026 云阅卷 · 在线考试自动阅卷系统 · 支持客观题自动评分 + 主观题智能辅助
+    </div>
+</div>
+
+<script>
+// 为不支持 :has() 的浏览器提供切换样式
+document.querySelectorAll('.role-tabs input[type=radio]').forEach(r => {
+    r.addEventListener('change', () => {
+        document.querySelectorAll('.role-tabs label').forEach(l => {
+            const input = l.querySelector('input');
+            if (input && input.checked) {
+                l.style.background = '#fff';
+                l.style.color = '#C42A2A';
+                l.style.fontWeight = '600';
+                l.style.boxShadow = '0 2px 4px rgba(0,0,0,.08)';
+            } else {
+                l.style.background = ''; l.style.color = ''; l.style.fontWeight = '';
+                l.style.boxShadow = '';
+            }
+        });
+    });
+});
+// 初始化时触发一次
+const checked = document.querySelector('.role-tabs input[type=radio]:checked');
+if (checked) checked.dispatchEvent(new Event('change'));
+</script>
+{% endblock %}

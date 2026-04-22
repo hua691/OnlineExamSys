@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}创建班级{% endblock %}
+{% block page_title %}创建班级{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:640px;margin:0 auto;">
+    <div class="card-title">🆕 创建班级（你将成为该班班主任）</div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-row">
+            <label>班级名称 *</label>{{ form.name }}
+        </div>
+        <div class="form-row">
+            <label>年级</label>{{ form.grade }}
+        </div>
+        <div class="form-row">
+            <label>班级简介</label>{{ form.description }}
+        </div>
+        <button class="btn" type="submit">创建</button>
+        <a href="{% url 'classes:my_classes' %}" class="btn ghost">取消</a>
+    </form>
+    <p style="color:#86909c;font-size:12px;margin-top:16px;">💡 创建成功后，系统会自动生成 6 位邀请码，把它分享给学生即可加入。</p>
+</div>
+{% endblock %}

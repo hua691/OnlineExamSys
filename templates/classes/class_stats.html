@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}{{ classroom.name }} - 成绩统计{% endblock %}
+{% block page_title %}{{ classroom.name }} · 成绩统计{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;margin-bottom:16px;">
+    <a href="{% url 'classes:class_detail' classroom.id %}" class="btn ghost">← 返回班级</a>
+    <a href="?export=csv" class="btn outline">📥 导出 CSV</a>
+</div>
+
+<div class="stat-grid">
+    <div class="stat-card"><div class="t">参考人数</div><div class="v">{{ student_count }}</div></div>
+    <div class="stat-card"><div class="t">答卷数</div><div class="v">{{ agg.cnt|default:0 }}</div></div>
+    <div class="stat-card"><div class="t">平均分</div><div class="v">{{ agg.avg|default:0|floatformat:1 }}</div></div>
+    <div class="stat-card"><div class="t">最高 / 最低</div><div class="v" style="font-size:24px;">{{ agg.max|default:0 }} / {{ agg.min|default:0 }}</div></div>
+</div>
+
+<div class="card">
+    <div class="card-title">📄 各试卷成绩汇总</div>
+    {% if paper_rows %}
+        <table class="data">
+            <thead><tr><th>试卷</th><th>提交数</th><th>平均分</th><th>最高</th><th>最低</th></tr></thead>
+            <tbody>
+                {% for r in paper_rows %}
+                <tr>
+                    <td>{{ r.paper.title }}</td>
+                    <td>{{ r.count }}</td>
+                    <td>{{ r.avg }}</td>
+                    <td>{{ r.max }}</td>
+                    <td>{{ r.min }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}<div class="empty">暂无已批阅的试卷数据</div>{% endif %}
+</div>
+
+<div class="card">
+    <div class="card-title">🎯 各题型正确率</div>
+    {% if type_rows %}
+        <table class="data">
+            <thead><tr><th>题型</th><th>答题次数</th><th>正确次数</th><th>正确率</th><th>可视化</th></tr></thead>
+            <tbody>
+                {% for r in type_rows %}
+                <tr>
+                    <td>{{ r.type }}</td>
+                    <td>{{ r.total }}</td>
+                    <td>{{ r.correct }}</td>
+                    <td>{{ r.rate }}%</td>
+                    <td>
+                        <div style="background:#f0f0f0;border-radius:4px;width:160px;height:10px;overflow:hidden;">
+                            <div style="background:var(--success);width:{{ r.rate }}%;height:100%;"></div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}<div class="empty">暂无数据</div>{% endif %}
+</div>
+
+<div class="card">
+    <div class="card-title">📌 高频错题 TOP 10</div>
+    {% if wrong_rows %}
+        <table class="data">
+            <thead><tr><th>#</th><th>题目</th><th>题型</th><th>错误次数</th></tr></thead>
+            <tbody>
+                {% for r in wrong_rows %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ r.question.content|truncatechars:60 }}</td>
+                    <td><span class="tag blue">{{ r.question.get_type_display }}</span></td>
+                    <td><span class="tag red">{{ r.wrong }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}<div class="empty">暂无错题数据</div>{% endif %}
+</div>
+{% endblock %}

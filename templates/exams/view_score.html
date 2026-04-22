@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}成绩查询 - {{ record.paper.title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>{{ record.paper.title }} - 成绩详情</h3>
+    <div style="margin: 1.5rem 0;">
+        <p style="font-size: 1.2rem; font-weight: bold;">
+            最终得分：{{ record.score }} 分
+        </p>
+        <p style="color: #666;">
+            提交时间：{{ record.submitted_at|date:"Y-m-d H:i" }} | 批阅时间：{{ record.graded_at|date:"Y-m-d H:i" }}
+        </p>
+    </div>
+    
+    <div style="margin-top: 2rem;">
+        <h4>答题情况：</h4>
+        {% for question in record.paper.questions.all %}
+        <div style="margin: 1rem 0; padding: 1rem; border: 1px solid #eee; border-radius: 4px;">
+            <p><strong>{{ question.get_type_display }} ({{ question.score }}分)：</strong>{{ question.content }}</p>
+            <p><strong>你的答案：</strong>{{ record.answers.get|stringformat:"s"|default:"未作答" }}</p>
+            <p><strong>标准答案：</strong>{{ question.answer }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <a href="{% url 'exams:dashboard' %}" class="btn btn-primary" style="margin-top: 1rem;">返回首页</a>
+</div>
+{% endblock %}
