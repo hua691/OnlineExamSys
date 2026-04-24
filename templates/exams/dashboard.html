@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}首页 · 长江云阅卷{% endblock %}
+{% block title %}首页 · 云阅卷{% endblock %}
 {% block page_title %}{% endblock %}
 
 {% block content %}
@@ -16,7 +16,7 @@
             </span>
         </div>
         <p class="hero-sub">
-            {% if is_teacher %}欢迎回到「长江 · 云阅卷」, 今天也要把教学安排得明明白白
+            {% if is_teacher %}欢迎回到「云阅卷」, 今天也要把教学安排得明明白白
             {% elif is_admin %}系统概况一览, 帮助你快速掌握整个平台的运行状况
             {% else %}新的学习旅程从这里开始, 加油!{% endif %}
         </p>
@@ -32,36 +32,36 @@
 {% if is_teacher %}
 {# ================= 教师仪表盘 ================= #}
 <div class="stat-grid">
-    <div class="stat-card" style="--c:#C42A2A;">
+    <a href="{% url 'classes:my_classes' %}" class="stat-card" style="--c:#C42A2A;">
         <div class="s-top"><span class="s-icon">📚</span><span class="s-trend">我教</span></div>
-        <div class="s-num">{{ teaching_courses }}</div>
         <div class="s-lab">课程</div>
-    </div>
-    <div class="stat-card" style="--c:#f0a030;">
+        <div class="s-num">{{ teaching_courses }}</div>
+    </a>
+    <a href="{% url 'classes:my_classes' %}" class="stat-card" style="--c:#f0a030;">
         <div class="s-top"><span class="s-icon">🏫</span><span class="s-trend">班主任</span></div>
-        <div class="s-num">{{ headed_classes }}</div>
         <div class="s-lab">班级</div>
-    </div>
-    <div class="stat-card" style="--c:#1677ff;">
+        <div class="s-num">{{ headed_classes }}</div>
+    </a>
+    <a href="{% url 'exams:question_list' %}" class="stat-card" style="--c:#1677ff;">
         <div class="s-top"><span class="s-icon">📋</span><span class="s-trend">题库</span></div>
-        <div class="s-num">{{ question_count }}</div>
         <div class="s-lab">试题</div>
-    </div>
-    <div class="stat-card" style="--c:#52c41a;">
+        <div class="s-num">{{ question_count }}</div>
+    </a>
+    <a href="{% url 'exams:paper_list' %}" class="stat-card" style="--c:#52c41a;">
         <div class="s-top"><span class="s-icon">📄</span><span class="s-trend">试卷</span></div>
-        <div class="s-num">{{ paper_count }}</div>
         <div class="s-lab">已创建</div>
-    </div>
-    <div class="stat-card" style="--c:#e15c5c;">
+        <div class="s-num">{{ paper_count }}</div>
+    </a>
+    <a href="{% url 'exams:teacher_correction' %}" class="stat-card" style="--c:#e15c5c;">
         <div class="s-top"><span class="s-icon">✍️</span><span class="s-trend">待办</span></div>
-        <div class="s-num">{{ pending_correction_count }}</div>
         <div class="s-lab">待批阅</div>
-    </div>
-    <div class="stat-card" style="--c:#7c3aed;">
+        <div class="s-num">{{ pending_correction_count }}</div>
+    </a>
+    <a href="{% url 'exams:teacher_correction' %}" class="stat-card" style="--c:#7c3aed;">
         <div class="s-top"><span class="s-icon">📊</span><span class="s-trend">本周</span></div>
-        <div class="s-num">{{ week_submission_count }}</div>
         <div class="s-lab">新提交</div>
-    </div>
+        <div class="s-num">{{ week_submission_count }}</div>
+    </a>
 </div>
 
 <div class="dash-grid">
@@ -141,46 +141,46 @@
 {% elif is_admin %}
 {# ================= 管理员仪表盘 ================= #}
 <div class="stat-grid">
-    <div class="stat-card" style="--c:#C42A2A;">
+    <a href="{% url 'users:manage_users' %}" class="stat-card" style="--c:#C42A2A;">
         <div class="s-top"><span class="s-icon">👥</span><span class="s-trend">+{{ new_users_week }} 本周</span></div>
-        <div class="s-num">{{ total_user }}</div>
         <div class="s-lab">用户总数</div>
-    </div>
-    <div class="stat-card" style="--c:#f0a030;">
+        <div class="s-num">{{ total_user }}</div>
+    </a>
+    <a href="{% url 'users:manage_users' %}" class="stat-card" style="--c:#f0a030;">
         <div class="s-top"><span class="s-icon">👨‍🏫</span></div>
-        <div class="s-num">{{ teacher_count }}</div>
         <div class="s-lab">教师</div>
-    </div>
-    <div class="stat-card" style="--c:#1677ff;">
+        <div class="s-num">{{ teacher_count }}</div>
+    </a>
+    <a href="{% url 'users:manage_users' %}" class="stat-card" style="--c:#1677ff;">
         <div class="s-top"><span class="s-icon">🎓</span></div>
-        <div class="s-num">{{ student_count }}</div>
         <div class="s-lab">学生</div>
-    </div>
-    <div class="stat-card" style="--c:#52c41a;">
+        <div class="s-num">{{ student_count }}</div>
+    </a>
+    <a href="{% url 'users:manage_classes' %}" class="stat-card" style="--c:#52c41a;">
         <div class="s-top"><span class="s-icon">🏫</span></div>
-        <div class="s-num">{{ total_class }}</div>
         <div class="s-lab">班级</div>
-    </div>
-    <div class="stat-card" style="--c:#7c3aed;">
+        <div class="s-num">{{ total_class }}</div>
+    </a>
+    <a href="{% url 'users:manage_courses' %}" class="stat-card" style="--c:#7c3aed;">
         <div class="s-top"><span class="s-icon">📘</span></div>
-        <div class="s-num">{{ total_course }}</div>
         <div class="s-lab">课程</div>
-    </div>
-    <div class="stat-card" style="--c:#e15c5c;">
+        <div class="s-num">{{ total_course }}</div>
+    </a>
+    <a href="{% url 'users:manage_papers' %}" class="stat-card" style="--c:#e15c5c;">
         <div class="s-top"><span class="s-icon">📄</span><span class="s-trend">+{{ new_papers_week }} 本周</span></div>
-        <div class="s-num">{{ total_paper }}</div>
         <div class="s-lab">试卷 · {{ total_paper_published }} 已发布</div>
-    </div>
-    <div class="stat-card" style="--c:#0891b2;">
+        <div class="s-num">{{ total_paper }}</div>
+    </a>
+    <a href="{% url 'users:manage_papers' %}" class="stat-card" style="--c:#0891b2;">
         <div class="s-top"><span class="s-icon">📝</span></div>
-        <div class="s-num">{{ total_question }}</div>
         <div class="s-lab">题库</div>
-    </div>
-    <div class="stat-card" style="--c:#ca8a04;">
+        <div class="s-num">{{ total_question }}</div>
+    </a>
+    <a href="{% url 'users:manage_papers' %}" class="stat-card" style="--c:#ca8a04;">
         <div class="s-top"><span class="s-icon">✍️</span><span class="s-trend">+{{ new_records_today }} 今日</span></div>
-        <div class="s-num">{{ total_record }}</div>
         <div class="s-lab">答卷总数</div>
-    </div>
+        <div class="s-num">{{ total_record }}</div>
+    </a>
 </div>
 
 <div class="card">
@@ -265,31 +265,31 @@
 {% else %}
 {# ================= 学生仪表盘 ================= #}
 <div class="stat-grid">
-    <div class="stat-card" style="--c:#C42A2A;">
+    <a href="{% url 'classes:my_classes' %}" class="stat-card" style="--c:#C42A2A;">
         <div class="s-top"><span class="s-icon">📘</span></div>
-        <div class="s-num">{{ joined_class_count }}</div>
         <div class="s-lab">已加入班级</div>
-    </div>
-    <div class="stat-card" style="--c:#f0a030;">
+        <div class="s-num">{{ joined_class_count }}</div>
+    </a>
+    <a href="{% url 'exams:my_todo' %}" class="stat-card" style="--c:#f0a030;">
         <div class="s-top"><span class="s-icon">⏰</span></div>
-        <div class="s-num">{{ uncompleted_paper_count }}</div>
         <div class="s-lab">待参加考试</div>
-    </div>
-    <div class="stat-card" style="--c:#52c41a;">
+        <div class="s-num">{{ uncompleted_paper_count }}</div>
+    </a>
+    <a href="{% url 'exams:student_record_list' %}" class="stat-card" style="--c:#52c41a;">
         <div class="s-top"><span class="s-icon">✅</span></div>
-        <div class="s-num">{{ completed_paper_count }}</div>
         <div class="s-lab">已完成</div>
-    </div>
-    <div class="stat-card" style="--c:#7c3aed;">
+        <div class="s-num">{{ completed_paper_count }}</div>
+    </a>
+    <a href="{% url 'exams:student_record_list' %}" class="stat-card" style="--c:#7c3aed;">
         <div class="s-top"><span class="s-icon">📊</span></div>
-        <div class="s-num">{{ avg_score|default:0 }}<span class="unit" style="font-size:14px;">分</span></div>
         <div class="s-lab">平均得分</div>
-    </div>
-    <div class="stat-card" style="--c:#e15c5c;">
+        <div class="s-num">{{ avg_score|default:0 }}<span class="unit" style="font-size:14px;">分</span></div>
+    </a>
+    <a href="{% url 'exams:wrong_question_list' %}" class="stat-card" style="--c:#e15c5c;">
         <div class="s-top"><span class="s-icon">❌</span></div>
-        <div class="s-num">{{ wrong_count }}</div>
         <div class="s-lab">错题收藏</div>
-    </div>
+        <div class="s-num">{{ wrong_count }}</div>
+    </a>
 </div>
 
 <div class="dash-grid">
@@ -417,14 +417,15 @@
 
 /* ============ 统计卡片 ============ */
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px;}
-.stat-card{background:#fff;padding:18px 20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.05);border-top:3px solid var(--c);transition:all .25s;}
+a.stat-card{text-decoration:none;color:inherit;display:block;}
+.stat-card{background:#fff;padding:18px 20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.05);border-top:3px solid var(--c);transition:all .25s;cursor:pointer;}
 .stat-card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.08);}
 .stat-card .s-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .stat-card .s-icon{font-size:24px;}
 .stat-card .s-trend{font-size:11px;color:var(--c);background:color-mix(in srgb, var(--c) 10%, #fff);padding:2px 8px;border-radius:10px;font-weight:500;}
+.stat-card .s-lab{color:#4e5969;font-size:14px;font-weight:600;margin-bottom:4px;}
 .stat-card .s-num{font-size:28px;font-weight:700;color:#1d2129;line-height:1;letter-spacing:-.5px;}
 .stat-card .s-num .unit{font-size:14px;color:#86909c;margin-left:2px;}
-.stat-card .s-lab{color:#86909c;font-size:12px;margin-top:6px;}
 
 /* ============ 双列布局 ============ */
 .dash-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
